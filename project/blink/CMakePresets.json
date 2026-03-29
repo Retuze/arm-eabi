@@ -1,0 +1,36 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 24,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "clang-ninja",
+      "displayName": "Clang + Ninja",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/clang-ninja",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/clang-arm-none-eabi.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "blink",
+      "configurePreset": "clang-ninja",
+      "targets": [
+        "blink"
+      ]
+    },
+    {
+      "name": "blink_flash",
+      "configurePreset": "clang-ninja",
+      "targets": [
+        "blink_flash"
+      ]
+    }
+  ]
+}
