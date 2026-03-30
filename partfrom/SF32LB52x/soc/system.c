@@ -29,7 +29,14 @@ void SysTick_Handler(void)
     ++g_sf32_tick_ms;
 }
 
-uint32_t tick_get(void)
+uint32_t millis(void)
 {
     return g_sf32_tick_ms;
+}
+
+void delay(uint32_t ms)
+{
+    uint32_t start = millis();
+    while ((millis() - start) < ms) {
+    }
 }

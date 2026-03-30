@@ -110,16 +110,3 @@ void digitalToggle(uint8_t pin)
 
     digitalWrite(pin, (bank.output->R & bank.mask) != 0U ? LOW : HIGH);
 }
-
-uint32_t millis(void)
-{
-    extern uint32_t tick_get(void);
-    return tick_get();
-}
-
-void delay(uint32_t ms)
-{
-    uint32_t start = millis();
-    while ((millis() - start) < ms) {
-    }
-}
