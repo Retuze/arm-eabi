@@ -62,6 +62,42 @@ void qspi_gpio_send_data(const uint8_t *data, uint16_t len);
 void qspi_gpio_send_data_4wire(const uint8_t *data, uint16_t len);
 
 /**
+ * @brief 命令格式0x02：单线命令+地址
+ */
+void qspi_gpio_cmd02(uint8_t addr);
+
+/**
+ * @brief 命令格式0x12：四线命令+地址
+ */
+void qspi_gpio_cmd12(uint8_t addr);
+
+/**
+ * @brief 命令格式0x03：读命令+地址
+ */
+void qspi_gpio_cmd03(uint8_t addr);
+
+/**
+ * @brief 读取一个字节
+ */
+uint8_t qspi_gpio_read_byte(void);
+
+/**
+ * @brief 读取连续数据
+ */
+void qspi_gpio_read_data(uint8_t *data, uint16_t len);
+
+/**
+ * @brief 发送LCD命令（简化）
+ */
+void qspi_gpio_write_cmd(uint8_t cmd);
+
+/**
+ * @brief 发送LCD数据（简化）
+ */
+void qspi_gpio_write_data(uint8_t data);
+
+
+/**
  * @brief 复位LCD
  * @param rst_pin LCD复位引脚
  */

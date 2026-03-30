@@ -1,8 +1,7 @@
 #include "lcd_driver.h"
-#include "qspi_gpio.h"
+#include "qspi.h"
 #include "gpio.h"
 #include "board.h"
-#include <stdio.h>
 #include <stdint.h>
 
 /* LCD命令定义 */
@@ -110,8 +109,6 @@ void lcd_init(void)
     /* 读取并验证LCD ID */
     lcd_read_id_04(id);
     
-    printf("LCD ID: 0x%02X 0x%02X 0x%02X\n", id[0], id[1], id[2]);
-    
     delay_ms(50);
     
     /* 密码解锁序列 */
@@ -144,8 +141,6 @@ void lcd_init(void)
     /* 显示开 */
     lcd_write_cmd(0x29);
     qspi_gpio_cmd_end();
-    
-    printf("LCD initialization completed!\n");
 }
 
 /**

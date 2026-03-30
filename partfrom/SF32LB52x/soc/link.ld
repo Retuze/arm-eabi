@@ -29,9 +29,19 @@ SECTIONS
         __etext = .;
     } > FLASH
 
+    .ramfunc : AT(__etext)
+    {
+        . = ALIGN(4);
+        __ramfunc_load__ = LOADADDR(.ramfunc);
+        __ramfunc_start__ = .;
+        *(.ramfunc*)
+        . = ALIGN(4);
+        __ramfunc_end__ = .;
+    } > RAM
+
     __data_load__ = LOADADDR(.data);
 
-    .data : AT(__etext)
+    .data : AT(__etext + SIZEOF(.ramfunc))
     {
         . = ALIGN(4);
         __data_start__ = .;
