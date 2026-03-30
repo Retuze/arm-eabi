@@ -1,6 +1,9 @@
 #include <stdint.h>
 
 extern uint32_t __StackTop;
+extern uint32_t __ramfunc_load__;
+extern uint32_t __ramfunc_start__;
+extern uint32_t __ramfunc_end__;
 extern uint32_t __data_load__;
 extern uint32_t __data_start__;
 extern uint32_t __data_end__;
@@ -49,8 +52,15 @@ const uintptr_t g_pfnVectors[] = {
 
 void Reset_Handler(void)
 {
-    uint32_t *src = &__data_load__;
-    uint32_t *dst = &__data_start__;
+    uint32_t *src = &__ramfunc_load__;
+    uint32_t *dst = &__ramfunc_start__;
+
+    while (dst < &__ramfunc_end__) {
+        *dst++ = *src++;
+    }
+
+    src = &__data_load__;
+    dst = &__data_start__;
 
     while (dst < &__data_end__) {
         *dst++ = *src++;

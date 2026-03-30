@@ -4,9 +4,14 @@
  * 平台无关实现 - 基于gpio.h接口
  */
 
-#include "qspi_gpio.h"
+#include "qspi.h"
 #include "gpio.h"
 #include "board.h"
+
+#ifndef SF32_RAMFUNC
+#define SF32_RAMFUNC __attribute__((section(".ramfunc"), noinline))
+#endif
+
 
 /**
  * @brief 初始化GPIO模拟QSPI接口
@@ -47,6 +52,11 @@ void qspi_gpio_cs(uint8_t level)
  * @brief 命令结束，拉高CS引脚
  * @note 在发送完命令和数据后调用此函数，表示命令结束
  */
+void qspi_gpio_cmd_start(void)
+{
+    qspi_gpio_cs(LOW);
+}
+
 void qspi_gpio_cmd_end(void)
 {
     qspi_gpio_cs(HIGH);
@@ -57,7 +67,7 @@ void qspi_gpio_cmd_end(void)
  * @param data 要发送的数据
  * @note 字节内位顺序：MSB优先（从bit7到bit0）
  */
-void qspi_gpio_send_byte(uint8_t data)
+SF32_RAMFUNC void qspi_gpio_send_byte(uint8_t data)
 {
     uint8_t i;
     
@@ -85,7 +95,7 @@ void qspi_gpio_send_byte(uint8_t data)
  * @param data 要发送的数据（完整8位，分两次发送：先高4位，后低4位）
  * @note 字节内位顺序：MSB优先（先发送bit7-4，再发送bit3-0）
  */
-void qspi_gpio_send_byte_4wire(uint8_t data)
+SF32_RAMFUNC void qspi_gpio_send_byte_4wire(uint8_t data)
 {
     /* SPI模式0：CPOL=0（时钟空闲为低），CPHA=0（数据在上升沿采样） */
     /* 确保时钟处于空闲状态（低电平） */
@@ -152,7 +162,7 @@ void qspi_gpio_send_data_4wire(const uint8_t *data, uint16_t len)
  * @brief QSPI命令格式：0x02 - Page Program（页编程命令）
  * 实现：发送 0x02 (CMD, 单线) + 24位地址 (ADDR, 单线, 3字节)
  */
-void qspi_gpio_cmd02(uint8_t addr)
+SF32_RAMFUNC void qspi_gpio_cmd02(uint8_t addr)
 {
     /* 先拉高CS，确保上个命令结束 */
     qspi_gpio_cs(HIGH);
@@ -168,7 +178,7 @@ void qspi_gpio_cmd02(uint8_t addr)
 /**
  * @brief QSPI命令格式：0x12 - Quad Page Program（4线页编程命令）
  */
-void qspi_gpio_cmd12(uint8_t addr)
+SF32_RAMFUNC void qspi_gpio_cmd12(uint8_t addr)
 {
     /* 先拉高CS，确保上个命令结束 */
     qspi_gpio_cs(HIGH);
@@ -184,7 +194,7 @@ void qspi_gpio_cmd12(uint8_t addr)
 /**
  * @brief QSPI命令格式：0x03 - Read Data（读取数据命令）
  */
-void qspi_gpio_cmd03(uint8_t addr)
+SF32_RAMFUNC void qspi_gpio_cmd03(uint8_t addr)
 {
     /* 先拉高CS，确保上个命令结束 */
     qspi_gpio_cs(HIGH);
