@@ -26,10 +26,24 @@
       ]
     },
     {
+      "name": "blink_boot",
+      "configurePreset": "clang-ninja",
+      "targets": [
+        "blink_boot"
+      ]
+    },
+    {
       "name": "blink_flash",
       "configurePreset": "clang-ninja",
       "targets": [
         "blink_flash"
+      ]
+    },
+    {
+      "name": "blink_boot_flash",
+      "configurePreset": "clang-ninja",
+      "targets": [
+        "blink_boot_flash"
       ]
     }
   ]

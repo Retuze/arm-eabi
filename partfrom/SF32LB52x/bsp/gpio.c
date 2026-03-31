@@ -1,100 +1,104 @@
-#include "gpio.h"
-#include "SF32LB52_registers.h"
+﻿#include "gpio.h"
+
+#include "afio.h"
+#include "register.h"
+#include "rcc.h"
 
 typedef struct {
-    volatile SF32_REG32 *input;
-    volatile SF32_REG32 *output;
-    volatile SF32_REG32 *output_set;
-    volatile SF32_REG32 *output_clear;
-    volatile SF32_REG32 *output_enable;
-    volatile SF32_REG32 *output_enable_set;
-    volatile SF32_REG32 *output_enable_clear;
+    volatile uint32_t *dir;
+    volatile uint32_t *dor;
+    volatile uint32_t *dosr;
+    volatile uint32_t *docr;
+    volatile uint32_t *doer;
+    volatile uint32_t *doesr;
+    volatile uint32_t *doecr;
     uint32_t mask;
 } gpio_bank_t;
 
-static int gpio_bank_select(uint8_t pin, gpio_bank_t *bank)
+static GPIO1_TypeDef *gpio_hw(void)
 {
-    if (pin <= 31U) {
-        bank->input = &HPSYS_GPIO->DIR0;
-        bank->output = &HPSYS_GPIO->DOR0;
-        bank->output_set = &HPSYS_GPIO->DOSR0;
-        bank->output_clear = &HPSYS_GPIO->DOCR0;
-        bank->output_enable = &HPSYS_GPIO->DOER0;
-        bank->output_enable_set = &HPSYS_GPIO->DOESR0;
-        bank->output_enable_clear = &HPSYS_GPIO->DOECR0;
-        bank->mask = (1UL << pin);
-        return 0;
+    return (GPIO1_TypeDef *)GPIO1_BASE;
+}
+
+static gpio_bank_t gpio_bank_select(uint8_t pin)
+{
+    GPIO1_TypeDef *gpio = gpio_hw();
+
+    if (pin < 32U) {
+        return (gpio_bank_t){
+            &gpio->DIR0,
+            &gpio->DOR0,
+            &gpio->DOSR0,
+            &gpio->DOCR0,
+            &gpio->DOER0,
+            &gpio->DOESR0,
+            &gpio->DOECR0,
+            1UL << pin,
+        };
     }
 
-    if (pin <= 44U) {
-        uint8_t pin_bank1 = (uint8_t)(pin - 32U);
-        bank->input = &HPSYS_GPIO->DIR1;
-        bank->output = &HPSYS_GPIO->DOR1;
-        bank->output_set = &HPSYS_GPIO->DOSR1;
-        bank->output_clear = &HPSYS_GPIO->DOCR1;
-        bank->output_enable = &HPSYS_GPIO->DOER1;
-        bank->output_enable_set = &HPSYS_GPIO->DOESR1;
-        bank->output_enable_clear = &HPSYS_GPIO->DOECR1;
-        bank->mask = (1UL << pin_bank1);
-        return 0;
-    }
+    return (gpio_bank_t){
+        &gpio->DIR1,
+        &gpio->DOR1,
+        &gpio->DOSR1,
+        &gpio->DOCR1,
+        &gpio->DOER1,
+        &gpio->DOESR1,
+        &gpio->DOECR1,
+        1UL << (pin - 32U),
+    };
+}
 
-    return -1;
+static uint32_t gpio_input_flags(uint8_t mode)
+{
+    switch (mode) {
+    case INPUT_PULLUP:
+        return SF32_AFIO_PULL_UP | SF32_AFIO_INPUT_ENABLE;
+    case INPUT_PULLDOWN:
+        return SF32_AFIO_PULL_DOWN | SF32_AFIO_INPUT_ENABLE;
+    case INPUT:
+    default:
+        return SF32_AFIO_PULL_NONE | SF32_AFIO_INPUT_ENABLE;
+    }
 }
 
 void pinMode(uint8_t pin, uint8_t mode)
 {
-    gpio_bank_t bank;
+    gpio_bank_t bank = gpio_bank_select(pin);
 
-    if (gpio_bank_select(pin, &bank) != 0) {
+    sf32_rcc_enable_module(SF32_RCC_MOD_PINMUX1);
+    sf32_rcc_enable_module(SF32_RCC_MOD_GPIO1);
+
+    if (mode == OUTPUT) {
+        sf32_afio_config_pad(pin, 0U, SF32_AFIO_PULL_NONE | SF32_AFIO_DRIVE_3);
+        *bank.doesr = bank.mask;
         return;
     }
 
-    HPSYS_RCC->ENR1.R |= (1UL << 0);
-    HPSYS_RCC->ESR1.R |= (1UL << 0);
-
-    switch (mode) {
-    case INPUT:
-    case INPUT_PULLUP:
-    case INPUT_PULLDOWN:
-        bank.output_enable_clear->R |= bank.mask;
-        break;
-    case OUTPUT:
-        bank.output_enable_set->R |= bank.mask;
-        break;
-    default:
-        break;
-    }
+    sf32_afio_config_pad(pin, 0U, gpio_input_flags(mode));
+    *bank.doecr = bank.mask;
 }
 
 void digitalWrite(uint8_t pin, uint8_t value)
 {
-    gpio_bank_t bank;
+    gpio_bank_t bank = gpio_bank_select(pin);
 
-    if (gpio_bank_select(pin, &bank) != 0) {
-        return;
-    }
-
-    if (value == HIGH) {
-        bank.output_set->R |= bank.mask;
+    if (value == LOW) {
+        *bank.docr = bank.mask;
     } else {
-        bank.output_clear->R |= bank.mask;
+        *bank.dosr = bank.mask;
     }
 }
 
 uint8_t digitalRead(uint8_t pin)
 {
-    gpio_bank_t bank;
+    gpio_bank_t bank = gpio_bank_select(pin);
     uint32_t value;
 
-    if (gpio_bank_select(pin, &bank) != 0) {
-        return LOW;
-    }
-
-    if ((bank.output_enable->R & bank.mask) != 0U) {
-        value = bank.output->R;
+    if ((*bank.doer & bank.mask) != 0U) {
+        value = *bank.dor;
     } else {
-        value = bank.input->R;
+        value = *bank.dir;
     }
 
     return ((value & bank.mask) != 0U) ? HIGH : LOW;
@@ -102,11 +106,9 @@ uint8_t digitalRead(uint8_t pin)
 
 void digitalToggle(uint8_t pin)
 {
-    gpio_bank_t bank;
-
-    if (gpio_bank_select(pin, &bank) != 0) {
-        return;
+    if (digitalRead(pin) == LOW) {
+        digitalWrite(pin, HIGH);
+    } else {
+        digitalWrite(pin, LOW);
     }
-
-    digitalWrite(pin, (bank.output->R & bank.mask) != 0U ? LOW : HIGH);
 }
