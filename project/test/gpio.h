@@ -1,8 +1,3 @@
-/*
- * GPIO 驱动头文件
- * 参考 Arduino 接口风格
- */
-
 #ifndef __GPIO_H__
 #define __GPIO_H__
 
