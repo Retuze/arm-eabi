@@ -1,6 +1,7 @@
 #include <stdint.h>
 
 extern uint32_t __StackTop;
+extern uint32_t __StackLimit;
 extern uint32_t __data_load__;
 extern uint32_t __data_start__;
 extern uint32_t __data_end__;
@@ -14,6 +15,11 @@ static void Default_Handler(void)
 {
     while (1) {
     }
+}
+
+static inline void sf32_set_msplim(uint32_t value)
+{
+    __asm volatile ("msr msplim, %0" :: "r" (value) : "memory");
 }
 
 void Reset_Handler(void);
@@ -51,6 +57,8 @@ void Reset_Handler(void)
 {
     uint32_t *src = &__data_load__;
     uint32_t *dst = &__data_start__;
+
+    sf32_set_msplim((uint32_t)(uintptr_t)&__StackLimit);
 
     while (dst < &__data_end__) {
         *dst++ = *src++;
