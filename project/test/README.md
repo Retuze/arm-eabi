@@ -35,9 +35,14 @@ This project provides a smaller and more direct reference than `blink`, mainly f
 
 ## Build Environment
 
-This project reuses the LLVM toolchain file from `project/blink`:
+This project uses a local toolchain file:
 
-- `project/blink/cmake/toolchains/clang-arm-none-eabi.cmake`
+- `project/test/cmake/toolchains/clang-arm-none-eabi.cmake`
+
+Compiler path setup:
+
+- preferred: add `clang`/`llvm-*` tools to `PATH`
+- optional: set `LLVM_ROOT` to LLVM install root (`.../LLVM` or `.../LLVM/bin`)
 
 Required tools:
 
@@ -90,7 +95,7 @@ For `elf` images in this repository, the burn command does not need `@地址`.
 
 ## Memory Layout
 
-Current defaults in [CMakeLists.txt](/d:/eabi-arm/arm-eabi/project/test/CMakeLists.txt) and [link.ld](/d:/eabi-arm/arm-eabi/project/test/link.ld):
+Current defaults are defined in [link.ld](/d:/eabi-arm/arm-eabi/project/test/link.ld):
 
 - Flash origin: `0x12020000`
 - Flash length: `0x00E00000`

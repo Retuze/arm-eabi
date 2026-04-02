@@ -11,7 +11,7 @@
       "displayName": "Clang + Ninja",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/clang-ninja",
-      "toolchainFile": "${sourceDir}/../blink/cmake/toolchains/clang-arm-none-eabi.cmake",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/clang-arm-none-eabi.cmake",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
