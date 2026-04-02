@@ -18,6 +18,7 @@ SECTIONS
     .vectors  :
     {
         KEEP(*(.vectors))
+        KEEP(*(.isr_vector))
         . = ALIGN(4);
     } > ROM
     .text  :
@@ -56,21 +57,26 @@ SECTIONS
 
 	.data : 
 	{
+		__data_start__ = .;
 		_sdata = .;
 		*(.data)
 		*(.data.*)
 		. = ALIGN(4);
 		_edata = .;
+		__data_end__ = .;
 	} > RAM AT>ROM
+	__data_load__ = LOADADDR(.data);
 
 	.bss (NOLOAD) :
 	{
+		__bss_start__ = .;
 		_sbss = .;
 		*(.bss)
 		*(.bss.*)
 		*(COMMON)
 		. = ALIGN(4);
 		_ebss = .;
+		__bss_end__ = .;
 	} > RAM
 
 	.copy.table :

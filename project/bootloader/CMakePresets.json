@@ -19,10 +19,10 @@
   ],
   "buildPresets": [
     {
-      "name": "firmware",
+      "name": "bootloader",
       "configurePreset": "clang",
       "targets": [
-        "firmware"
+        "bootloader"
       ]
     },
     {
