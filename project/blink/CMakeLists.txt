@@ -12,12 +12,6 @@ option(SF32_ENABLE_WARNINGS "Enable extra compiler warnings" ON)
 set(SF32_CHIP "SF32LB52" CACHE STRING "Target chip name used by sftool")
 set(SF32_BOARD "SF32LB52-DevKit-Nano" CACHE STRING "Target board name")
 set(SF32_SYSTEM_CLOCK_HZ "24000000" CACHE STRING "System clock used to program SysTick")
-set(SF32_FLASH_ORIGIN "0x12020000" CACHE STRING "Application flash base address")
-set(SF32_FLASH_LENGTH "0x00E00000" CACHE STRING "Application flash length")
-set(SF32_RAM_ORIGIN "0x20000000" CACHE STRING "RAM base address")
-set(SF32_RAM_LENGTH "0x00080000" CACHE STRING "RAM length")
-set(SF32_STACK_SIZE "0x00004000" CACHE STRING "Stack size in bytes")
-set(SF32_HEAP_SIZE "0x00000000" CACHE STRING "Heap size in bytes")
 set(SF32_PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
 set(SF32_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../..")
 set(SF32_PART_ROOT "${SF32_REPO_ROOT}/partfrom/SF32LB52x")
@@ -36,7 +30,7 @@ set(SF32_SFTOOL "$ENV{SF32_SFTOOL}" CACHE FILEPATH "Path to sftool executable")
 if(NOT SF32_SFTOOL)
     set(SF32_SFTOOL "${SF32_SFTOOL_DEFAULT}" CACHE FILEPATH "Path to sftool executable" FORCE)
 endif()
-set(SF32_LINKER_SCRIPT "${SF32_SOC_DIR}/link.ld")
+set(SF32_LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/link.ld")
 
 add_library(sf32_platform INTERFACE)
 target_include_directories(sf32_platform INTERFACE
@@ -99,12 +93,6 @@ target_link_options(firmware PRIVATE
     -Wl,--gc-sections
     -Wl,--build-id=none
     -Wl,-Map,$<TARGET_FILE_DIR:firmware>/firmware.map
-    -Wl,--defsym=__flash_origin__=${SF32_FLASH_ORIGIN}
-    -Wl,--defsym=__flash_length__=${SF32_FLASH_LENGTH}
-    -Wl,--defsym=__ram_origin__=${SF32_RAM_ORIGIN}
-    -Wl,--defsym=__ram_length__=${SF32_RAM_LENGTH}
-    -Wl,--defsym=__stack_size__=${SF32_STACK_SIZE}
-    -Wl,--defsym=__heap_size__=${SF32_HEAP_SIZE}
 )
 
 set(FIRMWARE_BIN ${CMAKE_CURRENT_BINARY_DIR}/firmware.bin)

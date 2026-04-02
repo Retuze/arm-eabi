@@ -11,14 +11,6 @@ cd project\blink
 cmake --preset clang
 ```
 
-To override the image layout:
-
-```powershell
-cd project\blink
-cmake --preset clang `
-  -DSF32_FLASH_ORIGIN=0x12020000
-```
-
 ## Build
 
 Build the application:
