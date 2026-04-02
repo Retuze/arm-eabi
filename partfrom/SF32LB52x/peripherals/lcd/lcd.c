@@ -1,6 +1,6 @@
 #include "lcd_driver.h"
 #include "qspi_gpio.h"
-#include "gpio.h"
+#include "bsp_gpio.h"
 #include "board.h"
 #include <stdio.h>
 #include <stdint.h>

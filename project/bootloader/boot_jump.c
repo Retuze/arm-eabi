@@ -1,7 +1,7 @@
 #include "boot_jump.h"
 
 #include "boot_cfg.h"
-#include "nvic.h"
+#include "bsp_nvic.h"
 #include "register.h"
 
 static uint32_t boot_read32(uint32_t addr)

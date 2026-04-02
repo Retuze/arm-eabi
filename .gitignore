@@ -2,3 +2,4 @@
 .vscode
 build
 docs
+compile_commands.json

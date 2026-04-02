@@ -1,5 +1,4 @@
-#include "nvic.h"
-
+#include "bsp_nvic.h"
 #include <stdint.h>
 
 #define SCS_BASE        (0xE000E000UL)

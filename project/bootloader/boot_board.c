@@ -1,13 +1,13 @@
 #include "boot_board.h"
 
-#include "afio.h"
+#include "bsp_afio.h"
 #include "boot_cfg.h"
-#include "rcc.h"
+#include "bsp_rcc.h"
 #include "register.h"
 
 static void boot_flash_power_on(void)
 {
-    SET_BIT(hwp_pmuc->PERI_LDO, PMUC_PERI_LDO_EN_VDD33_LDO2);
+    SET_BIT(PMUC->PERI_LDO, PMUC_PERI_LDO_EN_VDD33_LDO2);
 }
 
 static void boot_flash2_pinmux_init(void)

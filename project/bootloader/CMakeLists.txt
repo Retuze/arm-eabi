@@ -17,7 +17,7 @@ set(SF32_PART_ROOT "${SF32_REPO_ROOT}/partfrom/SF32LB52x")
 set(SF32_BOARD_DIR "${SF32_PART_ROOT}/board/${SF32_BOARD}")
 set(SF32_SOC_DIR "${SF32_PART_ROOT}/soc")
 set(SF32_BSP_DIR "${SF32_PART_ROOT}/bsp")
-set(SF32_PUBLIC_BSP_DIR "${SF32_REPO_ROOT}/bsp")
+set(SF32_HAL_DIR "${SF32_PART_ROOT}/hal")
 set(SF32_SDK_DIR "${SF32_PART_ROOT}/docs/SDK/sifli-sdk")
 set(SF32_SDK_CMSIS_DIR "${SF32_SDK_DIR}/drivers/cmsis")
 set(SF32_SDK_CMSIS_SOC_DIR "${SF32_SDK_CMSIS_DIR}/sf32lb52x")
@@ -33,9 +33,14 @@ set(SF32_LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/link.ld")
 
 add_library(sf32_platform INTERFACE)
 target_include_directories(sf32_platform INTERFACE
-    ${SF32_PUBLIC_BSP_DIR}
+    ${SF32_HAL_DIR}
     ${SF32_BOARD_DIR}
     ${SF32_SOC_DIR}
+    ${SF32_BSP_DIR}/bsp_afio
+    ${SF32_BSP_DIR}/bsp_gpio
+    ${SF32_BSP_DIR}/bsp_nvic
+    ${SF32_BSP_DIR}/bsp_rcc
+    ${SF32_BSP_DIR}/bsp_uart
     ${SF32_SDK_CMSIS_SOC_DIR}
     ${SF32_SDK_CMSIS_INC_DIR}
     ${SF32_SDK_EXT_CMSIS_INC_DIR}
@@ -53,19 +58,15 @@ target_compile_definitions(sf32_platform INTERFACE
 
 add_library(sf32_startup OBJECT
     ${SF32_SOC_DIR}/startup.c
-    ${SF32_SOC_DIR}/system.c
 )
 target_link_libraries(sf32_startup PUBLIC sf32_platform)
 
 add_library(sf32_bsp STATIC
-    ${SF32_BSP_DIR}/afio.c
-    ${SF32_BSP_DIR}/gpio.c
-    ${SF32_BSP_DIR}/nvic.c
-    ${SF32_BSP_DIR}/rcc.c
-    ${SF32_BSP_DIR}/uart.c
-    ${SF32_BSP_DIR}/spi.c
-    ${SF32_BSP_DIR}/i2c.c
-    ${SF32_BSP_DIR}/gptim.c
+    ${SF32_BSP_DIR}/bsp_afio/bsp_afio.c
+    ${SF32_BSP_DIR}/bsp_gpio/bsp_gpio.c
+    ${SF32_BSP_DIR}/bsp_nvic/bsp_nvic.c
+    ${SF32_BSP_DIR}/bsp_rcc/bsp_rcc.c
+    ${SF32_BSP_DIR}/bsp_uart/bsp_uart.c
 )
 target_link_libraries(sf32_bsp PUBLIC sf32_platform)
 

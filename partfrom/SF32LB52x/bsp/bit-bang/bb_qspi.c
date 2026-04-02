@@ -1,11 +1,11 @@
 /*
  * GPIO模拟QSPI驱动实现
  * 使用GPIO模拟4线QSPI接口
- * 平台无关实现 - 基于gpio.h接口
+ * 平台无关实现 - 基于bsp_gpio接口
  */
 
 #include "qspi_gpio.h"
-#include "gpio.h"
+#include "bsp_gpio.h"
 #include "board.h"
 
 /**

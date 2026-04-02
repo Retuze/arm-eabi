@@ -1,8 +1,7 @@
-#include "gpio.h"
-
-#include "afio.h"
+#include "bsp_gpio.h"
+#include "bsp_afio.h"
+#include "bsp_rcc.h"
 #include "SF32LB52.h"
-#include "rcc.h"
 
 typedef struct {
     volatile uint32_t *dir;
@@ -17,7 +16,7 @@ typedef struct {
 
 static HPSYS_GPIO_TypeDef *gpio_hw(void)
 {
-    return hwp_gpio1;
+    return HPSYS_GPIO;
 }
 
 static gpio_bank_t gpio_bank_select(uint8_t pin)
