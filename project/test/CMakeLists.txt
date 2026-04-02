@@ -10,7 +10,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(SF32_ENABLE_WARNINGS "Enable extra compiler warnings" ON)
 
 set(SF32_CHIP "SF32LB52" CACHE STRING "Target chip name used by sftool")
-set(SF32_SYSTEM_CLOCK_HZ "24000000" CACHE STRING "System clock used to program SysTick")
 set(SF32_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../..")
 set(SF32_SFTOOL_DEFAULT "${SF32_REPO_ROOT}/partfrom/SF32LB52x/tools/sftool.exe")
 set(SF32_SFTOOL "$ENV{SF32_SFTOOL}" CACHE FILEPATH "Path to sftool executable")
@@ -22,9 +21,6 @@ set(SF32_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/link.ld)
 add_library(test_platform INTERFACE)
 target_include_directories(test_platform INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}
-)
-target_compile_definitions(test_platform INTERFACE
-    $<$<COMPILE_LANGUAGE:C>:SF32_SYSTEM_CLOCK_HZ=${SF32_SYSTEM_CLOCK_HZ}>
 )
 
 add_executable(firmware

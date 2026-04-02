@@ -1,7 +1,7 @@
 #include <stdint.h>
 
 #ifndef SF32_SYSTEM_CLOCK_HZ
-#define SF32_SYSTEM_CLOCK_HZ 14000000UL
+#define SF32_SYSTEM_CLOCK_HZ 140000000UL
 #endif
 
 #define SCB_VTOR            (*(volatile uint32_t *)0xE000ED08UL)

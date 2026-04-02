@@ -11,7 +11,6 @@ option(SF32_ENABLE_WARNINGS "Enable extra compiler warnings" ON)
 
 set(SF32_CHIP "SF32LB52" CACHE STRING "Target chip name used by sftool")
 set(SF32_BOARD "SF32LB52-DevKit-Nano" CACHE STRING "Target board name")
-set(SF32_SYSTEM_CLOCK_HZ "24000000" CACHE STRING "System clock used to program SysTick")
 set(SF32_PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
 set(SF32_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../..")
 set(SF32_PART_ROOT "${SF32_REPO_ROOT}/partfrom/SF32LB52x")
@@ -47,7 +46,6 @@ target_compile_options(sf32_platform INTERFACE
     -mthumb
 )
 target_compile_definitions(sf32_platform INTERFACE
-    SF32_SYSTEM_CLOCK_HZ=${SF32_SYSTEM_CLOCK_HZ}
     SOC_BF0_HCPU
     SF32LB52X
 )
