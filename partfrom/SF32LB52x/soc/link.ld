@@ -1,79 +1,101 @@
-ENTRY(Reset_Handler)
+__ROM_BASE    = DEFINED(__flash_origin__) ? __flash_origin__ : 0x12020000;
+__ROM_SIZE    = DEFINED(__flash_length__) ? __flash_length__ : 0x00E00000;
+__RAM_BASE    = 0x20000000;
+__RAM_SIZE    = 0x0007FC00;
+__STACK_SIZE  = 0x00002000;
+__HEAP_SIZE   = 0x00000C00;
 
 MEMORY
 {
-    FLASH (rx)  : ORIGIN = DEFINED(__flash_origin__) ? __flash_origin__ : 0x12020000, LENGTH = DEFINED(__flash_length__) ? __flash_length__ : 0x00E00000
-    RAM   (rwx) : ORIGIN = DEFINED(__ram_origin__)   ? __ram_origin__   : 0x20000000, LENGTH = DEFINED(__ram_length__)   ? __ram_length__   : 0x00080000
+	ROM (rx)  : ORIGIN = __ROM_BASE, LENGTH = __ROM_SIZE
+	RAM (rwx) : ORIGIN = __RAM_BASE, LENGTH = __RAM_SIZE
 }
 
-__stack_size__ = DEFINED(__stack_size__) ? __stack_size__ : 0x00004000;
-__heap_size__ = DEFINED(__heap_size__) ? __heap_size__ : 0x00000000;
+ENTRY(Reset_Handler)
 
 SECTIONS
 {
-    .isr_vector :
+    .vectors  :
     {
+        KEEP(*(.vectors))
         . = ALIGN(4);
-        KEEP(*(.isr_vector))
-        . = ALIGN(4);
-    } > FLASH
-
-    .text :
+    } > ROM
+    .text  :
     {
-        . = ALIGN(4);
         *(.text*)
         *(.rodata*)
-        *(.glue_7)
-        *(.glue_7t)
+        KEEP(*(.init))
+        KEEP(*(.fini))
         . = ALIGN(4);
-        __etext = .;
-    } > FLASH
-
-    __data_load__ = LOADADDR(.data);
-
-    .data : AT(__etext)
+    } > ROM
+    /* ARM exception handling tables */
+    .ARM.extab :
     {
-        . = ALIGN(4);
-        __data_start__ = .;
-        *(.data*)
-        . = ALIGN(4);
-        __data_end__ = .;
-    } > RAM
+        *(.ARM.extab* .gnu.linkonce.armextab.*)
+    } > ROM
 
-    .bss (NOLOAD) :
-    {
-        . = ALIGN(4);
-        __bss_start__ = .;
-        *(.bss*)
-        *(COMMON)
-        . = ALIGN(4);
-        __bss_end__ = .;
-    } > RAM
+	.stack (NOLOAD) :
+	{
+		. = ALIGN(8);
+		__StackLimit = .;
+		. = . + __STACK_SIZE;
+		. = ALIGN(8);
+		__StackTop = .;
+	} > RAM
+	PROVIDE(__stack = __StackTop);
 
-    .heap (NOLOAD) :
-    {
-        . = ALIGN(8);
-        __heap_start__ = .;
-        . = . + __heap_size__;
-        __heap_end__ = .;
-    } > RAM
+	.heap (NOLOAD) :
+	{
+		. = ALIGN(8);
+		__end__ = .;
+		PROVIDE(end = .);
+		. = . + __HEAP_SIZE;
+		. = ALIGN(8);
+		__HeapLimit = .;
+	} > RAM
 
-    .stack (NOLOAD) :
-    {
-        . = ALIGN(8);
-        __StackLimit = .;
-        . = . + __stack_size__;
-        __StackTop = .;
-    } > RAM
+	.data : 
+	{
+		_sdata = .;
+		*(.data)
+		*(.data.*)
+		. = ALIGN(4);
+		_edata = .;
+	} > RAM AT>ROM
 
-    /DISCARD/ :
-    {
-        *(.comment)
-        *(.note*)
-        *(.eh_frame*)
-        *(.ARM.exidx*)
-        *(.ARM.extab*)
-    }
+	.bss (NOLOAD) :
+	{
+		_sbss = .;
+		*(.bss)
+		*(.bss.*)
+		*(COMMON)
+		. = ALIGN(4);
+		_ebss = .;
+	} > RAM
+
+	.copy.table :
+	{
+		. = ALIGN(4);
+		__copy_table_start__ = .;
+		LONG(LOADADDR(.data))
+		LONG(ADDR(.data))
+		LONG(SIZEOF(.data))
+		__copy_table_end__ = .;
+	} > ROM
+
+	.zero.table :
+	{
+		. = ALIGN(4);
+		__zero_table_start__ = .;
+		LONG(_sbss)
+		LONG(_ebss - _sbss)
+		__zero_table_end__ = .;
+	} > ROM
+
+	__exidx_start = .;
+	.ARM.exidx :
+	{
+		*(.ARM.exidx* .gnu.linkonce.armexidx.*)
+	} > ROM
+	__exidx_end = .;
 }
-
-ASSERT(__StackTop <= ORIGIN(RAM) + LENGTH(RAM), "RAM overflow: stack exceeds RAM")
