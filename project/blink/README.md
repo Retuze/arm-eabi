@@ -6,14 +6,14 @@ This project builds both the application image (`blink`) and a minimal second-st
 
 ```powershell
 cd project\blink
-cmake --preset clang-ninja
+cmake --preset clang
 ```
 
 To override the image layout:
 
 ```powershell
 cd project\blink
-cmake --preset clang-ninja `
+cmake --preset clang `
   -DSF32_BOOT_FLASH_ORIGIN=0x12010000 `
   -DSF32_FLASH_ORIGIN=0x12020000
 ```

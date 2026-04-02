@@ -7,7 +7,7 @@
   },
   "configurePresets": [
     {
-      "name": "clang-ninja",
+      "name": "clang",
       "displayName": "Clang + Ninja",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/clang-ninja",
@@ -20,28 +20,28 @@
   "buildPresets": [
     {
       "name": "blink",
-      "configurePreset": "clang-ninja",
+      "configurePreset": "clang",
       "targets": [
         "blink"
       ]
     },
     {
       "name": "blink_boot",
-      "configurePreset": "clang-ninja",
+      "configurePreset": "clang",
       "targets": [
         "blink_boot"
       ]
     },
     {
       "name": "blink_flash",
-      "configurePreset": "clang-ninja",
+      "configurePreset": "clang",
       "targets": [
         "blink_flash"
       ]
     },
     {
       "name": "blink_boot_flash",
-      "configurePreset": "clang-ninja",
+      "configurePreset": "clang",
       "targets": [
         "blink_boot_flash"
       ]

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(blink C)
+project(blink C ASM)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -19,22 +19,25 @@ set(SF32_RAM_ORIGIN "0x20000000" CACHE STRING "RAM base address")
 set(SF32_RAM_LENGTH "0x00080000" CACHE STRING "RAM length")
 set(SF32_STACK_SIZE "0x00004000" CACHE STRING "Stack size in bytes")
 set(SF32_HEAP_SIZE "0x00000000" CACHE STRING "Heap size in bytes")
-set(SF32_PROJECT_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
-set(SF32_REPO_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../..)
-set(SF32_PART_ROOT ${SF32_REPO_ROOT}/partfrom/SF32LB52x)
-set(SF32_BOARD_DIR ${SF32_PART_ROOT}/board/${SF32_BOARD})
-set(SF32_SOC_DIR ${SF32_PART_ROOT}/soc)
-set(SF32_BSP_DIR ${SF32_PART_ROOT}/bsp)
-set(SF32_PUBLIC_BSP_DIR ${SF32_REPO_ROOT}/bsp)
-set(SF32_SDK_DIR ${SF32_PART_ROOT}/docs/SDK/sifli-sdk)
-set(SF32_SDK_CMSIS_DIR ${SF32_SDK_DIR}/drivers/cmsis)
-set(SF32_SDK_CMSIS_SOC_DIR ${SF32_SDK_CMSIS_DIR}/${CMAKE_SYSTEM_PROCESSOR})
-set(SF32_SDK_CMSIS_SOC_DIR ${SF32_SDK_CMSIS_DIR}/sf32lb52x)
-set(SF32_SDK_CMSIS_INC_DIR ${SF32_SDK_CMSIS_DIR}/Include)
-set(SF32_SDK_EXT_CMSIS_INC_DIR ${SF32_SDK_DIR}/external/CMSIS/Include)
-set(SF32_TOOL_DIR ${SF32_PART_ROOT}/tools)
-set(SF32_SFTOOL ${SF32_TOOL_DIR}/sftool.exe CACHE FILEPATH "Path to sftool executable")
-set(SF32_LINKER_SCRIPT ${SF32_SOC_DIR}/link.ld)
+set(SF32_PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
+set(SF32_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+set(SF32_PART_ROOT "${SF32_REPO_ROOT}/partfrom/SF32LB52x")
+set(SF32_BOARD_DIR "${SF32_PART_ROOT}/board/${SF32_BOARD}")
+set(SF32_SOC_DIR "${SF32_PART_ROOT}/soc")
+set(SF32_BSP_DIR "${SF32_PART_ROOT}/bsp")
+set(SF32_PUBLIC_BSP_DIR "${SF32_REPO_ROOT}/bsp")
+set(SF32_SDK_DIR "${SF32_PART_ROOT}/docs/SDK/sifli-sdk")
+set(SF32_SDK_CMSIS_DIR "${SF32_SDK_DIR}/drivers/cmsis")
+set(SF32_SDK_CMSIS_SOC_DIR "${SF32_SDK_CMSIS_DIR}/sf32lb52x")
+set(SF32_SDK_CMSIS_INC_DIR "${SF32_SDK_CMSIS_DIR}/Include")
+set(SF32_SDK_EXT_CMSIS_INC_DIR "${SF32_SDK_DIR}/external/CMSIS/Include")
+set(SF32_TOOL_DIR "${SF32_PART_ROOT}/tools")
+set(SF32_SFTOOL_DEFAULT "${SF32_TOOL_DIR}/sftool.exe")
+set(SF32_SFTOOL "$ENV{SF32_SFTOOL}" CACHE FILEPATH "Path to sftool executable")
+if(NOT SF32_SFTOOL)
+    set(SF32_SFTOOL "${SF32_SFTOOL_DEFAULT}" CACHE FILEPATH "Path to sftool executable" FORCE)
+endif()
+set(SF32_LINKER_SCRIPT "${SF32_SOC_DIR}/link.ld")
 
 add_library(sf32_platform INTERFACE)
 target_include_directories(sf32_platform INTERFACE
@@ -117,7 +120,7 @@ add_custom_command(
     VERBATIM
 )
 
-if(EXISTS ${SF32_SFTOOL})
+if(EXISTS "${SF32_SFTOOL}")
     add_custom_target(blink_flash
         COMMAND ${CMAKE_COMMAND}
             -DSF32_SFTOOL=${SF32_SFTOOL}
@@ -130,7 +133,7 @@ if(EXISTS ${SF32_SFTOOL})
     )
 endif()
 
-set(SF32_BOOT_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/boot/link.ld)
+set(SF32_BOOT_LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/boot/link.ld")
 
 add_executable(blink_boot
     boot/boot_board.c
@@ -170,7 +173,7 @@ add_custom_command(
     VERBATIM
 )
 
-if(EXISTS ${SF32_SFTOOL})
+if(EXISTS "${SF32_SFTOOL}")
     add_custom_target(blink_boot_flash
         COMMAND ${CMAKE_COMMAND}
             -DSF32_SFTOOL=${SF32_SFTOOL}
