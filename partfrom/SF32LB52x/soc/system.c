@@ -15,11 +15,7 @@
 #define SYST_CSR_TICKINT    (1UL << 1)
 #define SYST_CSR_CLKSOURCE  (1UL << 2)
 
-#if defined(SF32_USE_TEST_STARTUP)
-extern uint32_t __Vectors;
-#else
 extern const uintptr_t g_pfnVectors[];
-#endif
 
 volatile uint32_t g_sf32_tick_ms;
 
