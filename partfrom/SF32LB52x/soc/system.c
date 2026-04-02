@@ -1,7 +1,7 @@
 #include <stdint.h>
 
 #ifndef SF32_SYSTEM_CLOCK_HZ
-#define SF32_SYSTEM_CLOCK_HZ 24000000UL
+#define SF32_SYSTEM_CLOCK_HZ 14000000UL
 #endif
 
 #define SCB_VTOR            (*(volatile uint32_t *)0xE000ED08UL)
@@ -25,19 +25,8 @@ volatile uint32_t g_sf32_tick_ms;
 
 void SystemInit(void)
 {
-    /* Rebind interrupts to the current image before enabling SysTick. */
-#if defined(SF32_USE_TEST_STARTUP)
-    SCB_VTOR = (uint32_t)(uintptr_t)&__Vectors;
-#if !defined(SF32_USE_TEST_STARTUP_FULL_INIT)
-    return;
-#endif
-#elif defined(SF32_VTOR_ONLY)
-    SCB_VTOR = (uint32_t)(uintptr_t)g_pfnVectors;
-    return;
-#else
-    SCB_VTOR = (uint32_t)(uintptr_t)g_pfnVectors;
-#endif
 
+    SCB_VTOR = (uint32_t)(uintptr_t)g_pfnVectors;
     g_sf32_tick_ms = 0;
     SYST_RVR = (SF32_SYSTEM_CLOCK_HZ / 1000UL) - 1UL;
     SYST_CVR = 0;

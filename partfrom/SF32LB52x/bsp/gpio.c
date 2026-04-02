@@ -1,7 +1,7 @@
-﻿#include "gpio.h"
+#include "gpio.h"
 
 #include "afio.h"
-#include "register.h"
+#include "SF32LB52.h"
 #include "rcc.h"
 
 typedef struct {
@@ -15,36 +15,36 @@ typedef struct {
     uint32_t mask;
 } gpio_bank_t;
 
-static GPIO1_TypeDef *gpio_hw(void)
+static HPSYS_GPIO_TypeDef *gpio_hw(void)
 {
-    return (GPIO1_TypeDef *)GPIO1_BASE;
+    return hwp_gpio1;
 }
 
 static gpio_bank_t gpio_bank_select(uint8_t pin)
 {
-    GPIO1_TypeDef *gpio = gpio_hw();
+    HPSYS_GPIO_TypeDef *gpio = gpio_hw();
 
     if (pin < 32U) {
         return (gpio_bank_t){
-            &gpio->DIR0,
-            &gpio->DOR0,
-            &gpio->DOSR0,
-            &gpio->DOCR0,
-            &gpio->DOER0,
-            &gpio->DOESR0,
-            &gpio->DOECR0,
+            &gpio->DIR0.R,
+            &gpio->DOR0.R,
+            &gpio->DOSR0.R,
+            &gpio->DOCR0.R,
+            &gpio->DOER0.R,
+            &gpio->DOESR0.R,
+            &gpio->DOECR0.R,
             1UL << pin,
         };
     }
 
     return (gpio_bank_t){
-        &gpio->DIR1,
-        &gpio->DOR1,
-        &gpio->DOSR1,
-        &gpio->DOCR1,
-        &gpio->DOER1,
-        &gpio->DOESR1,
-        &gpio->DOECR1,
+        &gpio->DIR1.R,
+        &gpio->DOR1.R,
+        &gpio->DOSR1.R,
+        &gpio->DOCR1.R,
+        &gpio->DOER1.R,
+        &gpio->DOESR1.R,
+        &gpio->DOECR1.R,
         1UL << (pin - 32U),
     };
 }
@@ -106,9 +106,11 @@ uint8_t digitalRead(uint8_t pin)
 
 void digitalToggle(uint8_t pin)
 {
-    if (digitalRead(pin) == LOW) {
-        digitalWrite(pin, HIGH);
+    gpio_bank_t bank = gpio_bank_select(pin);
+
+    if ((*bank.dor & bank.mask) != 0U) {
+        *bank.docr = bank.mask;
     } else {
-        digitalWrite(pin, LOW);
+        *bank.dosr = bank.mask;
     }
 }

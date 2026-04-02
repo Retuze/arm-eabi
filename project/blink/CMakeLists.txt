@@ -63,6 +63,10 @@ add_library(sf32_bsp STATIC
     ${SF32_BSP_DIR}/gpio.c
     ${SF32_BSP_DIR}/nvic.c
     ${SF32_BSP_DIR}/rcc.c
+    ${SF32_BSP_DIR}/uart.c
+    ${SF32_BSP_DIR}/spi.c
+    ${SF32_BSP_DIR}/i2c.c
+    ${SF32_BSP_DIR}/gptim.c
 )
 target_link_libraries(sf32_bsp PUBLIC sf32_platform)
 

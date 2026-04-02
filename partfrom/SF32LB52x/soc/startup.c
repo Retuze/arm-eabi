@@ -70,7 +70,7 @@ void Reset_Handler(void)
     }
 
     SystemInit();
-    (void)main();
+    main();
 
     while (1) {
     }
