@@ -7,7 +7,7 @@
   },
   "configurePresets": [
     {
-      "name": "clang-ninja",
+      "name": "clang",
       "displayName": "Clang + Ninja",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/clang-ninja",
@@ -19,17 +19,17 @@
   ],
   "buildPresets": [
     {
-      "name": "test",
-      "configurePreset": "clang-ninja",
+      "name": "firmware",
+      "configurePreset": "clang",
       "targets": [
-        "test"
+        "firmware"
       ]
     },
     {
-      "name": "test_flash",
-      "configurePreset": "clang-ninja",
+      "name": "download",
+      "configurePreset": "clang",
       "targets": [
-        "test_flash"
+        "download"
       ]
     }
   ]

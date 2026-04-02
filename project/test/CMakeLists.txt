@@ -27,7 +27,7 @@ target_compile_definitions(test_platform INTERFACE
     $<$<COMPILE_LANGUAGE:C>:SF32_SYSTEM_CLOCK_HZ=${SF32_SYSTEM_CLOCK_HZ}>
 )
 
-add_executable(test
+add_executable(firmware
     gpio.c
     main.c
     startup.s
@@ -37,41 +37,41 @@ add_executable(test
 # are consumed instead of reported as unused.
 set_source_files_properties(startup.s PROPERTIES COMPILE_OPTIONS "-x;assembler-with-cpp")
 
-set_target_properties(test PROPERTIES SUFFIX ".elf")
-target_link_libraries(test PRIVATE test_platform)
+set_target_properties(firmware PROPERTIES SUFFIX ".elf")
+target_link_libraries(firmware PRIVATE test_platform)
 
 if(SF32_ENABLE_WARNINGS)
-    target_compile_options(test PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(firmware PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-target_link_options(test PRIVATE
+target_link_options(firmware PRIVATE
     -T${SF32_LINKER_SCRIPT}
     -nostdlib
     -Wl,--gc-sections
     -Wl,--build-id=none
-    -Wl,-Map,$<TARGET_FILE_DIR:test>/test.map
+    -Wl,-Map,$<TARGET_FILE_DIR:firmware>/firmware.map
 )
 
-set(TEST_BIN ${CMAKE_CURRENT_BINARY_DIR}/test.bin)
-set(TEST_HEX ${CMAKE_CURRENT_BINARY_DIR}/test.hex)
+set(FIRMWARE_BIN ${CMAKE_CURRENT_BINARY_DIR}/firmware.bin)
+set(FIRMWARE_HEX ${CMAKE_CURRENT_BINARY_DIR}/firmware.hex)
 
 add_custom_command(
-    TARGET test POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:test> ${TEST_BIN}
-    COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:test> ${TEST_HEX}
-    COMMAND ${CMAKE_SIZE} --format=berkeley $<TARGET_FILE:test>
-    BYPRODUCTS ${TEST_BIN} ${TEST_HEX}
+    TARGET firmware POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:firmware> ${FIRMWARE_BIN}
+    COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:firmware> ${FIRMWARE_HEX}
+    COMMAND ${CMAKE_SIZE} --format=berkeley $<TARGET_FILE:firmware>
+    BYPRODUCTS ${FIRMWARE_BIN} ${FIRMWARE_HEX}
     VERBATIM
 )
 
 if(EXISTS ${SF32_SFTOOL})
-    add_custom_target(test_flash
+    add_custom_target(download
         COMMAND ${CMAKE_COMMAND}
             -DSF32_SFTOOL=${SF32_SFTOOL}
             -DSF32_CHIP=${SF32_CHIP}
-            -DSF32_IMAGE_FILE=$<TARGET_FILE:test>
+            -DSF32_IMAGE_FILE=$<TARGET_FILE:firmware>
             -P ${CMAKE_CURRENT_SOURCE_DIR}/flash.cmake
-        DEPENDS test
+        DEPENDS firmware
         USES_TERMINAL
         VERBATIM
     )

@@ -29,7 +29,7 @@ This project provides a smaller and more direct reference than `blink`, mainly f
 - [CMakeLists.txt](/d:/eabi-arm/arm-eabi/project/test/CMakeLists.txt)
   build entry
 - [CMakePresets.json](/d:/eabi-arm/arm-eabi/project/test/CMakePresets.json)
-  presets for `clang-ninja`, `test`, and `test_flash`
+  presets for `clang`, `firmware`, and `download`
 - [flash.cmake](/d:/eabi-arm/arm-eabi/project/test/flash.cmake)
   invokes `sftool` and prompts for the serial port when flashing
 
@@ -57,22 +57,22 @@ Configure:
 
 ```powershell
 cd project\test
-cmake --preset clang-ninja
+cmake --preset clang
 ```
 
 Build:
 
 ```powershell
 cd project\test
-cmake --build --preset test
+cmake --build --preset firmware
 ```
 
 Generated outputs:
 
-- `build/clang-ninja/test.elf`
-- `build/clang-ninja/test.bin`
-- `build/clang-ninja/test.hex`
-- `build/clang-ninja/test.map`
+- `build/clang-ninja/firmware.elf`
+- `build/clang-ninja/firmware.bin`
+- `build/clang-ninja/firmware.hex`
+- `build/clang-ninja/firmware.map`
 
 ## Flash
 
@@ -80,7 +80,7 @@ Flash the application:
 
 ```powershell
 cd project\test
-cmake --build --preset test_flash
+cmake --build --preset download
 ```
 
 When the flash target runs, it will prompt for the serial port in the terminal.
@@ -88,7 +88,7 @@ When the flash target runs, it will prompt for the serial port in the terminal.
 Equivalent `sftool` command:
 
 ```powershell
-partfrom\SF32LB52x\tools\sftool.exe -c SF32LB52 -p <PORT> write_flash build\clang-ninja\test.elf
+partfrom\SF32LB52x\tools\sftool.exe -c SF32LB52 -p <PORT> write_flash build\clang-ninja\firmware.elf
 ```
 
 For `elf` images in this repository, the burn command does not need `@地址`.
@@ -129,7 +129,7 @@ If the board LED is not connected to GPIO31, update [main.c](/d:/eabi-arm/arm-ea
 
 ## Relationship To blink
 
-`test` is not meant to replace `blink`. It is a smaller comparison baseline. When debugging `blink`, useful comparison points include:
+`project/test` is not meant to replace `blink`. It is a smaller comparison baseline. When debugging `blink`, useful comparison points include:
 
 - startup file behavior
 - vector table completeness
@@ -142,7 +142,7 @@ If the board LED is not connected to GPIO31, update [main.c](/d:/eabi-arm/arm-ea
 
 ```powershell
 cd project\test
-cmake --preset clang-ninja
-cmake --build --preset test
-cmake --build --preset test_flash
+cmake --preset clang
+cmake --build --preset firmware
+cmake --build --preset download
 ```
