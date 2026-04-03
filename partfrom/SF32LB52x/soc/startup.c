@@ -9,6 +9,9 @@ extern size_t __StackLimit;
 extern size_t __data_load__;
 extern size_t __data_start__;
 extern size_t __data_end__;
+extern size_t __ramfunc_load__;
+extern size_t __ramfunc_start__;
+extern size_t __ramfunc_end__;
 extern size_t __bss_start__;
 extern size_t __bss_end__;
 
@@ -18,60 +21,23 @@ extern int main(void);
 volatile uint32_t g_sf32_tick_ms;
 extern const uintptr_t g_pfnVectors[];
 
-static uint32_t sf32_get_sysclk_hz(void)
-{
-    const uint32_t sel_sys_pos = 0U;
-    const uint32_t sel_sys_msk = (0x3UL << sel_sys_pos);
-    uint32_t sel_sys = (HPSYS_RCC->CSR.R & sel_sys_msk) >> sel_sys_pos;
-
-    switch (sel_sys) {
-    case 3U: {
-        uint32_t dll1cr = HPSYS_RCC->DLL1CR.R;
-        uint32_t dll1_en = dll1cr & 1U;
-        uint32_t stg;
-        if (dll1_en == 0U) {
-            return 0U;
-        }
-        stg = (dll1cr >> 2U) & 0xFU;
-        return (stg + 1U) * 24000000UL;
-    }
-    case 1U:
-    case 0U:
-    default:
-        return 48000000UL;
-    }
-}
-
-uint32_t sf32_get_hclk_hz(void)
-{
-    const uint32_t hdiv_pos = 0U;
-    const uint32_t hdiv_msk = (0xFFUL << hdiv_pos);
-    uint32_t sysclk = sf32_get_sysclk_hz();
-    uint32_t hdiv = (HPSYS_RCC->CFGR.R & hdiv_msk) >> hdiv_pos;
-
-    if (sysclk == 0U) {
-        return 0U;
-    }
-    if (hdiv == 0U) {
-        hdiv = 1U;
-    }
-    return sysclk / hdiv;
-}
-
 void SystemInit(void)
 {
+    const uint32_t default_hclk_hz = 140000000UL;
     const uint32_t syst_csr_enable = (1UL << 0);
     const uint32_t syst_csr_tickint = (1UL << 1);
     const uint32_t syst_csr_clksource = (1UL << 2);
-    uint32_t hclk = sf32_get_hclk_hz();
 
     SCB_VTOR = (uint32_t)(uintptr_t)g_pfnVectors;
     g_sf32_tick_ms = 0;
-    if (hclk == 0U) {
-        hclk = 48000000UL;
-    }
-    SYST_RVR = (hclk / 1000UL) - 1UL;
-    SYST_CVR = 0;
+
+    SCB_DEMCR |= SCB_DEMCR_TRCENA;
+    DWT_CYCCNT = 0U;
+    DWT_CTRL |= DWT_CTRL_CYCCNTENA;
+
+    SYST_CSR = 0U;
+    SYST_RVR = (default_hclk_hz / 1000UL) - 1UL;
+    SYST_CVR = 0U;
     SYST_CSR = syst_csr_clksource | syst_csr_tickint | syst_csr_enable;
 }
 
@@ -89,6 +55,12 @@ void Reset_Handler(void)
     __asm volatile ("msr msplim, %0" :: "r" (__StackLimit) : "memory");
 
     while (dst < &__data_end__) {
+        *dst++ = *src++;
+    }
+
+    src = &__ramfunc_load__;
+    dst = &__ramfunc_start__;
+    while (dst < &__ramfunc_end__) {
         *dst++ = *src++;
     }
 

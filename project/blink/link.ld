@@ -68,6 +68,16 @@ SECTIONS
 	} > RAM AT>ROM
 	__data_load__ = LOADADDR(.data);
 
+	.ramfunc :
+	{
+		__ramfunc_start__ = .;
+		*(.ramfunc)
+		*(.ramfunc.*)
+		. = ALIGN(4);
+		__ramfunc_end__ = .;
+	} > RAM AT>ROM
+	__ramfunc_load__ = LOADADDR(.ramfunc);
+
 	.bss (NOLOAD) :
 	{
 		__bss_start__ = .;

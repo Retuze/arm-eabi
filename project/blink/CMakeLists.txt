@@ -38,6 +38,7 @@ target_include_directories(sf32_platform INTERFACE
     ${SF32_SOC_DIR}
     ${SF32_BSP_DIR}/bsp_afio
     ${SF32_BSP_DIR}/bsp_gpio
+    ${SF32_BSP_DIR}/bsp_dwt
     ${SF32_BSP_DIR}/bsp_nvic
     ${SF32_BSP_DIR}/bsp_rcc
     ${SF32_BSP_DIR}/bsp_uart
@@ -62,6 +63,7 @@ target_link_libraries(sf32_startup PUBLIC sf32_platform)
 
 add_library(sf32_bsp STATIC
     ${SF32_BSP_DIR}/bsp_afio/bsp_afio.c
+    ${SF32_BSP_DIR}/bsp_dwt/bsp_dwt.c
     ${SF32_BSP_DIR}/bsp_gpio/bsp_gpio.c
     ${SF32_BSP_DIR}/bsp_nvic/bsp_nvic.c
     ${SF32_BSP_DIR}/bsp_rcc/bsp_rcc.c

@@ -1,6 +1,5 @@
 #include "bsp_gpio.h"
 #include "bsp_afio.h"
-#include "bsp_rcc.h"
 #include "SF32LB52.h"
 
 typedef struct {
@@ -61,12 +60,22 @@ static uint32_t gpio_input_flags(uint8_t mode)
     }
 }
 
+static void gpio_enable_clocks(void)
+{
+    const uint32_t pinmux1_mask = (1UL << 2);
+    const uint32_t gpio1_mask = (1UL << 0);
+
+    HPSYS_RCC->ENR1.R |= pinmux1_mask;
+    HPSYS_RCC->ESR1.R |= pinmux1_mask;
+    HPSYS_RCC->ENR2.R |= gpio1_mask;
+    HPSYS_RCC->ESR2.R |= gpio1_mask;
+}
+
 void pinMode(uint8_t pin, uint8_t mode)
 {
     gpio_bank_t bank = gpio_bank_select(pin);
 
-    sf32_rcc_enable_module(SF32_RCC_MOD_PINMUX1);
-    sf32_rcc_enable_module(SF32_RCC_MOD_GPIO1);
+    gpio_enable_clocks();
 
     if (mode == OUTPUT) {
         sf32_afio_config_pad(pin, 0U, SF32_AFIO_PULL_NONE | SF32_AFIO_DRIVE_3);

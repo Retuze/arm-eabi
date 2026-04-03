@@ -20,6 +20,7 @@ typedef union {
 
 #define HPSYS_RCC_BASE       (0x50000000UL)
 #define HPSYS_PINMUX_BASE    (0x50003000UL)
+#define HPSYS_CFG_BASE       (0x5000B000UL)
 #define USART1_BASE          (0x50084000UL)
 #define USART2_BASE          (0x50085000UL)
 #define USART3_BASE          (0x50086000UL)
@@ -201,11 +202,89 @@ typedef struct {
 } BTIM_TypeDef;
 
 typedef struct {
-    volatile uint32_t RESERVED0[23];
+    volatile uint32_t CR;
+    volatile uint32_t WER;
+    volatile uint32_t WSR;
+    volatile uint32_t WCR;
+    volatile uint32_t VRTC_CR;
+    volatile uint32_t VRET_CR;
+    volatile uint32_t LRC10_CR;
+    volatile uint32_t LRC32_CR;
+    volatile uint32_t LXT_CR;
+    volatile uint32_t AON_BG;
+    volatile uint32_t AON_LDO;
+    volatile uint32_t BUCK_CR1;
+    volatile uint32_t BUCK_CR2;
+    volatile uint32_t CHG_CR1;
+    volatile uint32_t CHG_CR2;
+    volatile uint32_t CHG_CR3;
+    volatile uint32_t CHG_CR4;
+    volatile uint32_t CHG_CR5;
+    volatile uint32_t CHG_SR;
+    volatile uint32_t HPSYS_LDO;
+    volatile uint32_t LPSYS_LDO;
+    volatile uint32_t HPSYS_SWR;
+    volatile uint32_t LPSYS_SWR;
     volatile uint32_t PERI_LDO;
-    volatile uint32_t RESERVED1[2];
+    volatile uint32_t PMU_TR;
+    volatile uint32_t PMU_RSVD;
     volatile uint32_t HXT_CR1;
+    volatile uint32_t HXT_CR2;
+    volatile uint32_t HXT_CR3;
+    volatile uint32_t HRC_CR;
+    volatile uint32_t DBL96_CR;
+    volatile uint32_t DBL96_CALR;
+    volatile uint32_t CAU_BGR;
+    volatile uint32_t CAU_TR;
+    volatile uint32_t CAU_RSVD;
+    volatile uint32_t WKUP_CNT;
+    volatile uint32_t PWRKEY_CNT;
+    volatile uint32_t HPSYS_VOUT;
+    volatile uint32_t LPSYS_VOUT;
+    volatile uint32_t BUCK_VOUT;
 } PMUC_TypeDef;
+
+typedef struct {
+    volatile uint32_t BMR;
+    volatile uint32_t IDR;
+    volatile uint32_t SWCR;
+    volatile uint32_t SCR;
+    volatile uint32_t SYSCR;
+    volatile uint32_t RTC_TR;
+    volatile uint32_t RTC_DR;
+    volatile uint32_t ULPMCR;
+    volatile uint32_t DBGR;
+    volatile uint32_t MDBGR;
+    volatile uint32_t BISTCR;
+    volatile uint32_t BISTR;
+    volatile uint32_t ROMCR0;
+    volatile uint32_t ROMCR1;
+    volatile uint32_t ROMCR2;
+    volatile uint32_t LPIRQ;
+    volatile uint32_t USBCR;
+    volatile uint32_t SYS_RSVD;
+    volatile uint32_t I2C1_PINR;
+    volatile uint32_t I2C2_PINR;
+    volatile uint32_t I2C3_PINR;
+    volatile uint32_t I2C4_PINR;
+    volatile uint32_t USART1_PINR;
+    volatile uint32_t USART2_PINR;
+    volatile uint32_t USART3_PINR;
+    volatile uint32_t GPTIM1_PINR;
+    volatile uint32_t GPTIM2_PINR;
+    volatile uint32_t ETR_PINR;
+    volatile uint32_t LPTIM1_PINR;
+    volatile uint32_t LPTIM2_PINR;
+    volatile uint32_t ATIM1_PINR1;
+    volatile uint32_t ATIM1_PINR2;
+    volatile uint32_t ATIM1_PINR3;
+    volatile uint32_t PTA_PINR;
+    volatile uint32_t ANAU_CR;
+    volatile uint32_t ANAU_RSVD;
+    volatile uint32_t ANATR;
+    volatile uint32_t CAU2_CR;
+    volatile uint32_t CAU2_RSVD;
+} HPSYS_CFG_TypeDef;
 
 #define HPSYS_RCC      ((HPSYS_RCC_TypeDef *)HPSYS_RCC_BASE)
 #define HPSYS_PINMUX   ((HPSYS_PINMUX_TypeDef *)HPSYS_PINMUX_BASE)
@@ -224,15 +303,43 @@ typedef struct {
 #define GPTIM2         ((GPTIM_TypeDef *)GPTIM2_BASE)
 #define BTIM2          ((BTIM_TypeDef *)BTIM2_BASE)
 #define PMUC           ((PMUC_TypeDef *)PMUC_BASE)
+#define HPSYS_CFG      ((HPSYS_CFG_TypeDef *)HPSYS_CFG_BASE)
+
+#define HPSYS_CFG_SYSCR_LDO_VSEL_Pos    (2U)
+#define HPSYS_CFG_SYSCR_LDO_VSEL_Msk    (0x1UL << HPSYS_CFG_SYSCR_LDO_VSEL_Pos)
+
+#define HPSYS_CFG_CAU2_CR_HPBG_VDDPSW_EN_Pos  (0U)
+#define HPSYS_CFG_CAU2_CR_HPBG_VDDPSW_EN_Msk  (0x1UL << HPSYS_CFG_CAU2_CR_HPBG_VDDPSW_EN_Pos)
+#define HPSYS_CFG_CAU2_CR_HPBG_EN_Pos   (1U)
+#define HPSYS_CFG_CAU2_CR_HPBG_EN_Msk   (0x1UL << HPSYS_CFG_CAU2_CR_HPBG_EN_Pos)
+
+#define PMUC_BUCK_CR2_SET_VOUT_M_Pos    (20U)
+#define PMUC_BUCK_CR2_SET_VOUT_M_Msk    (0xFUL << PMUC_BUCK_CR2_SET_VOUT_M_Pos)
+#define PMUC_HPSYS_LDO_VREF_Pos         (2U)
+#define PMUC_HPSYS_LDO_VREF_Msk         (0xFUL << PMUC_HPSYS_LDO_VREF_Pos)
+#define PMUC_HPSYS_VOUT_VOUT_Pos        (0U)
+#define PMUC_HPSYS_VOUT_VOUT_Msk        (0xFUL << PMUC_HPSYS_VOUT_VOUT_Pos)
+#define PMUC_BUCK_VOUT_VOUT_Pos         (0U)
+#define PMUC_BUCK_VOUT_VOUT_Msk         (0xFUL << PMUC_BUCK_VOUT_VOUT_Pos)
 
 #define SCB_VTOR            (*(volatile uint32_t *)0xE000ED08UL)
+#define SCB_DEMCR           (*(volatile uint32_t *)0xE000EDFCUL)
 #define SCS_BASE            (0xE000E000UL)
 #define SYSTICK_BASE        (SCS_BASE + 0x0010UL)
 #define SYST_CSR            (*(volatile uint32_t *)(SYSTICK_BASE + 0x0UL))
 #define SYST_RVR            (*(volatile uint32_t *)(SYSTICK_BASE + 0x4UL))
 #define SYST_CVR            (*(volatile uint32_t *)(SYSTICK_BASE + 0x8UL))
+#define DWT_BASE            (0xE0001000UL)
+#define DWT_CTRL            (*(volatile uint32_t *)(DWT_BASE + 0x0UL))
+#define DWT_CYCCNT          (*(volatile uint32_t *)(DWT_BASE + 0x4UL))
 
-uint32_t sf32_get_hclk_hz(void);
+#define SCB_DEMCR_TRCENA    (1UL << 24)
+#define DWT_CTRL_CYCCNTENA  (1UL << 0)
+
+#ifndef SF32_RAMFUNC
+#define SF32_RAMFUNC __attribute__((section(".ramfunc")))
+#endif
+
 uint32_t millis(void);
 void delay(uint32_t ms);
 
