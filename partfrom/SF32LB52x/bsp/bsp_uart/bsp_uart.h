@@ -3,7 +3,49 @@
 #define _BSP_UART_H_
 
 /* USART1 direct log output, board default: 1Mbps */
-void print(const char *text);
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+void print_str(const char *text);
+void print_char(char value);
+void print_i32(int32_t value);
+void print_u32(uint32_t value);
+void print_i64(int64_t value);
+void print_u64(uint64_t value);
+void print_float(float value);
+void print_double(double value);
+void print_ptr(const void *value);
+void print_bool(bool value);
+
+#define print(value) \
+    _Generic((value), \
+        char: print_char, \
+        signed char: print_i32, \
+        unsigned char: print_u32, \
+        short: print_i32, \
+        unsigned short: print_u32, \
+        int: print_i32, \
+        unsigned int: print_u32, \
+        long: print_i64, \
+        unsigned long: print_u64, \
+        long long: print_i64, \
+        unsigned long long: print_u64, \
+        float: print_float, \
+        double: print_double, \
+        long double: print_double, \
+        char *: print_str, \
+        const char *: print_str, \
+        void *: print_ptr, \
+        const void *: print_ptr, \
+        bool: print_bool \
+    )(value)
+
+#define println(value) \
+    do { \
+        print(value); \
+        print_char('\n'); \
+    } while (0)
 
 #define USART_CR1_UE             (1UL << 0)
 #define USART_CR1_RE             (1UL << 2)

@@ -4,50 +4,6 @@
 #include "bsp_uart.h"
 #include "SF32LB52.h"
 
-#define sf32_log print
-
-static void sf32_log_u32(const char *prefix, uint32_t value, const char *suffix)
-{
-    char buf[11];
-    int i = 0;
-
-    if (prefix != 0) {
-        sf32_log(prefix);
-    }
-
-    if (value == 0U) {
-        sf32_log("0");
-    } else {
-        while ((value > 0U) && (i < (int)sizeof(buf))) {
-            buf[i++] = (char)('0' + (value % 10U));
-            value /= 10U;
-        }
-        while (i > 0) {
-            --i;
-            char out[2];
-            out[0] = buf[i];
-            out[1] = '\0';
-            sf32_log(out);
-        }
-    }
-
-    if (suffix != 0) {
-        sf32_log(suffix);
-    }
-}
-
-static void sf32_log_i32(const char *prefix, int32_t value, const char *suffix)
-{
-    if (value < 0) {
-        sf32_log(prefix);
-        sf32_log("-");
-        sf32_log_u32(0, (uint32_t)(-value), suffix);
-        return;
-    }
-
-    sf32_log_u32(prefix, (uint32_t)value, suffix);
-}
-
 static const char *sf32_clock_rc_text(int rc)
 {
     switch (rc) {
@@ -72,11 +28,28 @@ int main(void)
     int rc;
     pinMode(31, OUTPUT);
 
-    sf32_log("blink start\n");
+    println("blink start");
     rc = sf32_rcc_set_hclk_hz(target_hclk_hz);
-    sf32_log_i32("set 240MHz rc=", rc, ", ");
-    sf32_log(sf32_clock_rc_text(rc));
-    sf32_log("\n");
+    print("set 240MHz rc=");
+    print(rc);
+    print(", ");
+    println(sf32_clock_rc_text(rc));
+
+    print("u32=");
+    print(target_hclk_hz);
+    print(", i32=");
+    print((int32_t)-12345);
+    print(", char=");
+    print((char)'A');
+    print(", bool=");
+    print((bool)true);
+    print(", ptr=");
+    print((void *)&rc);
+    print(", float=");
+    print(3.14159f);
+    print(", double=");
+    print(2.718281828);
+    println("");
 
     while (1) {
         digitalToggle(31);
