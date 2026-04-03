@@ -9,7 +9,7 @@ static inline void bsp_uart1_write_byte(uint8_t value)
     USART1->TDR = value;
 }
 
-void sf32_log(const char *text)
+void print(const char *text)
 {
     if (text == 0) {
         return;

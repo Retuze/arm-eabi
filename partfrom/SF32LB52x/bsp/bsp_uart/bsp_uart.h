@@ -3,7 +3,7 @@
 #define _BSP_UART_H_
 
 /* USART1 direct log output, board default: 1Mbps */
-void sf32_log(const char *text);
+void print(const char *text);
 
 #define USART_CR1_UE             (1UL << 0)
 #define USART_CR1_RE             (1UL << 2)
