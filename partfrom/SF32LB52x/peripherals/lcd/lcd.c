@@ -1,8 +1,8 @@
-#include "lcd_driver.h"
-#include "qspi_gpio.h"
+#include "lcd.h"
+#include "bb_qspi.h"
 #include "bsp_gpio.h"
 #include "board.h"
-#include <stdio.h>
+#include <stddef.h>
 #include <stdint.h>
 
 /* LCD命令定义 */
@@ -23,19 +23,40 @@
 #define LCD_CMD_MADCTL      0x36
 
 /**
- * @brief 延时函数封装
+ * @brief 发送LCD命令
  */
-static void delay_ms(uint32_t ms)
+static void lcd_write_cmd_02(uint8_t addr)
 {
-    delay(ms);
+    /* 先拉高CS，确保上个命令结束 */
+    qspi_cmd_end();
+    /* 拉低CS，选中设备 */
+    qspi_cmd_start();
+    
+    qspi_send_byte(0x02);      /* QSPI命令0x02 */
+    qspi_send_byte(0x00);      /* 地址高字节 */
+    qspi_send_byte(addr);      /* 地址中字节 */
+    qspi_send_byte(0x00);      /* 地址低字节 */
 }
 
 /**
  * @brief 发送LCD命令
  */
+static void lcd_write_cmd_12(uint8_t addr)
+{
+    /* 先拉高CS，确保上个命令结束 */
+    qspi_cmd_end();
+    /* 拉低CS，选中设备 */
+    qspi_cmd_start();
+    
+    qspi_send_byte(0x12);           /* QSPI命令0x12 */
+    qspi_send_byte_4wire(0x00);     /* 地址高字节，4线发送 */
+    qspi_send_byte_4wire(addr);     /* 地址中字节，4线发送 */
+    qspi_send_byte_4wire(0x00);     /* 地址低字节，4线发送 */
+}
+
 static void lcd_write_cmd(uint8_t cmd)
 {
-    qspi_gpio_cmd02(cmd);
+    lcd_write_cmd_02(cmd);
 }
 
 /**
@@ -43,41 +64,34 @@ static void lcd_write_cmd(uint8_t cmd)
  */
 static void lcd_write_data(uint8_t data)
 {
-    qspi_gpio_send_byte(data);
+    qspi_send_byte(data);
 }
 
 /**
- * @brief 读取LCD ID
+ * @brief 读取LCD数据
  */
-static void lcd_read_id_04(uint8_t *id)
+static void lcd_read_data_03(uint8_t addr)
 {
-    qspi_gpio_cmd03(LCD_CMD_RDDID);
-    qspi_gpio_read_data(id, 3);
-    qspi_gpio_cmd_end();
+    /* 先拉高CS，确保上个命令结束 */
+    qspi_cmd_end();
+    /* 拉低CS，选中设备 */
+    qspi_cmd_start();
+    
+    qspi_send_byte(0x03);      /* QSPI命令0x03 */
+    qspi_send_byte(0x00);      /* 地址高字节 */
+    qspi_send_byte(addr);      /* 地址中字节 */
+    qspi_send_byte(0x00);      /* 地址低字节 */
 }
 
-/**
- * @brief 发送LCD命令和1个参数
- */
-static void lcd_qspi_cmd_param(uint8_t cmd, uint8_t param)
-{
-    lcd_write_cmd(cmd);
-    lcd_write_data(param);
-    qspi_gpio_cmd_end();
-}
 
-/**
- * @brief 发送LCD命令和4个参数
- */
-static void lcd_qspi_cmd_4param(uint8_t cmd, uint8_t p1, uint8_t p2, uint8_t p3, uint8_t p4)
-{
-    lcd_write_cmd(cmd);
-    lcd_write_data(p1);
-    lcd_write_data(p2);
-    lcd_write_data(p3);
-    lcd_write_data(p4);
-    qspi_gpio_cmd_end();
-}
+#define lcd_qspi_cmd_param(cmd, ...) \
+    do { \
+        lcd_write_cmd_02(cmd); \
+        uint8_t _data[] = { __VA_ARGS__ }; \
+        for (size_t _i = 0; _i < sizeof(_data) / sizeof(_data[0]); _i++) { \
+            lcd_write_data(_data[_i]); \
+        } \
+    } while(0)
 
 /**
  * @brief LCD硬件复位
@@ -87,11 +101,11 @@ void lcd_reset(void)
     pinMode(LCD_RST, OUTPUT);
     
     digitalWrite(LCD_RST, HIGH);
-    delay_ms(10);
+    delay(10);
     digitalWrite(LCD_RST, LOW);
-    delay_ms(10);
+    delay(10);
     digitalWrite(LCD_RST, HIGH);
-    delay_ms(50);
+    delay(50);
 }
 
 /**
@@ -102,7 +116,7 @@ void lcd_init(void)
     uint8_t id[3];
     
     /* 初始化QSPI GPIO */
-    qspi_gpio_init();
+    qspi_init();
     
     /* 硬件复位 */
     lcd_reset();
@@ -112,7 +126,7 @@ void lcd_init(void)
     
     printf("LCD ID: 0x%02X 0x%02X 0x%02X\n", id[0], id[1], id[2]);
     
-    delay_ms(50);
+    delay(50);
     
     /* 密码解锁序列 */
     lcd_qspi_cmd_param(0xFE, 0x20);
@@ -133,13 +147,13 @@ void lcd_init(void)
     lcd_qspi_cmd_param(0x63, 0xFF);
     
     /* 设置窗口 */
-    lcd_qspi_cmd_4param(0x2A, 0x00, 0x00, 0x01, 0x7F);
-    lcd_qspi_cmd_4param(0x2B, 0x00, 0x00, 0x01, 0xBF);
+    lcd_qspi_cmd_param(0x2A, 0x00, 0x00, 0x01, 0x7F);
+    lcd_qspi_cmd_param(0x2B, 0x00, 0x00, 0x01, 0xBF);
     
     /* 退出睡眠模式 */
     lcd_write_cmd(0x11);
     qspi_gpio_cmd_end();
-    delay_ms(120);
+    delay(120);
     
     /* 显示开 */
     lcd_write_cmd(0x29);

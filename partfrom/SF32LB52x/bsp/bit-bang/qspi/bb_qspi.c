@@ -1,17 +1,10 @@
-/*
- * GPIO模拟QSPI驱动实现
- * 使用GPIO模拟4线QSPI接口
- * 平台无关实现 - 基于bsp_gpio接口
- */
-
-#include "qspi_gpio.h"
 #include "bsp_gpio.h"
 #include "board.h"
 
 /**
  * @brief 初始化GPIO模拟QSPI接口
  */
-void qspi_gpio_init(void)
+void qspi_init(void)
 {
     /* 配置背光引脚为输出模式并拉高（供电） */
     pinMode(LCD_BL, OUTPUT);
@@ -35,21 +28,21 @@ void qspi_gpio_init(void)
 }
 
 /**
- * @brief 设置CS引脚电平
- * @param level 电平值 (HIGH=不选中/空闲, LOW=选中)
+ * @brief 命令开始，拉低CS引脚
+ * @note 在发送命令和数据前调用此函数，表示命令开始
  */
-void qspi_gpio_cs(uint8_t level)
+void qspi_cmd_start(void)
 {
-    digitalWrite(LCD_CS, level);
+    digitalWrite(LCD_CS, LOW);
 }
 
 /**
  * @brief 命令结束，拉高CS引脚
  * @note 在发送完命令和数据后调用此函数，表示命令结束
  */
-void qspi_gpio_cmd_end(void)
+void qspi_cmd_end(void)
 {
-    qspi_gpio_cs(HIGH);
+    digitalWrite(LCD_CS, HIGH);
 }
 
 /**
@@ -57,7 +50,7 @@ void qspi_gpio_cmd_end(void)
  * @param data 要发送的数据
  * @note 字节内位顺序：MSB优先（从bit7到bit0）
  */
-void qspi_gpio_send_byte(uint8_t data)
+void qspi_send_byte(uint8_t data)
 {
     uint8_t i;
     
@@ -85,7 +78,7 @@ void qspi_gpio_send_byte(uint8_t data)
  * @param data 要发送的数据（完整8位，分两次发送：先高4位，后低4位）
  * @note 字节内位顺序：MSB优先（先发送bit7-4，再发送bit3-0）
  */
-void qspi_gpio_send_byte_4wire(uint8_t data)
+void qspi_send_byte_4wire(uint8_t data)
 {
     /* SPI模式0：CPOL=0（时钟空闲为低），CPHA=0（数据在上升沿采样） */
     /* 确保时钟处于空闲状态（低电平） */
@@ -124,12 +117,12 @@ void qspi_gpio_send_byte_4wire(uint8_t data)
  * @param len 数据长度
  * @note 字节内：MSB优先；多字节数据：按数组顺序发送
  */
-void qspi_gpio_send_data(const uint8_t *data, uint16_t len)
+void qspi_send_data(const uint8_t *data, uint16_t len)
 {
     uint16_t i;
     
     for (i = 0; i < len; i++) {
-        qspi_gpio_send_byte(data[i]);
+        qspi_send_byte(data[i]);
     }
 }
 
@@ -139,69 +132,20 @@ void qspi_gpio_send_data(const uint8_t *data, uint16_t len)
  * @param len 数据长度
  * @note 字节内：MSB优先；多字节数据：按数组顺序发送
  */
-void qspi_gpio_send_data_4wire(const uint8_t *data, uint16_t len)
+void qspi_send_data_4wire(const uint8_t *data, uint16_t len)
 {
     uint16_t i;
     
     for (i = 0; i < len; i++) {
-        qspi_gpio_send_byte_4wire(data[i]);
+        qspi_send_byte_4wire(data[i]);
     }
-}
-
-/**
- * @brief QSPI命令格式：0x02 - Page Program（页编程命令）
- * 实现：发送 0x02 (CMD, 单线) + 24位地址 (ADDR, 单线, 3字节)
- */
-void qspi_gpio_cmd02(uint8_t addr)
-{
-    /* 先拉高CS，确保上个命令结束 */
-    qspi_gpio_cs(HIGH);
-    /* 拉低CS，选中设备 */
-    qspi_gpio_cs(LOW);
-    
-    qspi_gpio_send_byte(0x02);      /* QSPI命令0x02 */
-    qspi_gpio_send_byte(0x00);      /* 地址高字节 */
-    qspi_gpio_send_byte(addr);      /* 地址中字节 */
-    qspi_gpio_send_byte(0x00);      /* 地址低字节 */
-}
-
-/**
- * @brief QSPI命令格式：0x12 - Quad Page Program（4线页编程命令）
- */
-void qspi_gpio_cmd12(uint8_t addr)
-{
-    /* 先拉高CS，确保上个命令结束 */
-    qspi_gpio_cs(HIGH);
-    /* 拉低CS，选中设备 */
-    qspi_gpio_cs(LOW);
-    
-    qspi_gpio_send_byte(0x12);           /* QSPI命令0x12 */
-    qspi_gpio_send_byte_4wire(0x00);     /* 地址高字节，4线发送 */
-    qspi_gpio_send_byte_4wire(addr);     /* 地址中字节，4线发送 */
-    qspi_gpio_send_byte_4wire(0x00);     /* 地址低字节，4线发送 */
-}
-
-/**
- * @brief QSPI命令格式：0x03 - Read Data（读取数据命令）
- */
-void qspi_gpio_cmd03(uint8_t addr)
-{
-    /* 先拉高CS，确保上个命令结束 */
-    qspi_gpio_cs(HIGH);
-    /* 拉低CS，选中设备 */
-    qspi_gpio_cs(LOW);
-    
-    qspi_gpio_send_byte(0x03);      /* QSPI命令0x03 */
-    qspi_gpio_send_byte(0x00);      /* 地址高字节 */
-    qspi_gpio_send_byte(addr);      /* 地址中字节 */
-    qspi_gpio_send_byte(0x00);      /* 地址低字节 */
 }
 
 /**
  * @brief 读取一个字节（单线模式，使用D0）
  * @return 读取的数据字节
  */
-uint8_t qspi_gpio_read_byte(void)
+uint8_t qspi_read_byte(void)
 {
     uint8_t i;
     uint8_t data = 0;
@@ -236,7 +180,7 @@ uint8_t qspi_gpio_read_byte(void)
  * @param data 数据缓冲区
  * @param len 数据长度
  */
-void qspi_gpio_read_data(uint8_t *data, uint16_t len)
+void qspi_read_data(uint8_t *data, uint16_t len)
 {
     uint16_t i;
     
@@ -245,28 +189,9 @@ void qspi_gpio_read_data(uint8_t *data, uint16_t len)
     
     /* 读取所有数据 */
     for (i = 0; i < len; i++) {
-        data[i] = qspi_gpio_read_byte();
+        data[i] = qspi_read_byte();
     }
     
     /* 恢复D0为输出模式 */
     pinMode(LCD_D0, OUTPUT);
-}
-
-/**
- * @brief 发送LCD命令（简化函数）
- * @param cmd 命令字节
- */
-void qspi_gpio_write_cmd(uint8_t cmd)
-{
-    qspi_gpio_cmd02(cmd);
-    qspi_gpio_cmd_end();
-}
-
-/**
- * @brief 发送LCD数据字节（简化函数）
- * @param data 数据字节
- */
-void qspi_gpio_write_data(uint8_t data)
-{
-    qspi_gpio_send_byte(data);
 }

@@ -4,6 +4,8 @@ set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
 set(ARM_NONE_EABI_TARGET "arm-none-eabi" CACHE STRING "Cross compile target triple")
 set(SF32_CPU "cortex-m33" CACHE STRING "Target CPU")
+set(SF32_FPU "fpv5-sp-d16" CACHE STRING "Target FPU")
+set(SF32_FLOAT_ABI "hard" CACHE STRING "Target float ABI")
 
 # Optional environment variable, for example:
 #   LLVM_ROOT=C:/tool/LLVM
@@ -26,9 +28,9 @@ find_program(CMAKE_OBJCOPY NAMES llvm-objcopy llvm-objcopy.exe HINTS ${_LLVM_HIN
 find_program(CMAKE_SIZE NAMES llvm-size llvm-size.exe HINTS ${_LLVM_HINT_DIRS} REQUIRED)
 
 set(SF32_COMMON_FLAGS_INIT
-    "--target=${ARM_NONE_EABI_TARGET} -mcpu=${SF32_CPU} -mthumb -ffreestanding -fdata-sections -ffunction-sections -fno-builtin -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables"
+    "--target=${ARM_NONE_EABI_TARGET} -mcpu=${SF32_CPU} -mfpu=${SF32_FPU} -mfloat-abi=${SF32_FLOAT_ABI} -mthumb -ffreestanding -fdata-sections -ffunction-sections -fno-builtin -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables"
 )
-set(SF32_ASM_FLAGS_INIT "--target=${ARM_NONE_EABI_TARGET} -mcpu=${SF32_CPU} -mthumb")
+set(SF32_ASM_FLAGS_INIT "--target=${ARM_NONE_EABI_TARGET} -mcpu=${SF32_CPU} -mfpu=${SF32_FPU} -mfloat-abi=${SF32_FLOAT_ABI} -mthumb")
 set(CMAKE_C_FLAGS_INIT "${SF32_COMMON_FLAGS_INIT}")
 set(CMAKE_ASM_FLAGS_INIT "${SF32_ASM_FLAGS_INIT}")
-set(CMAKE_EXE_LINKER_FLAGS_INIT "--target=${ARM_NONE_EABI_TARGET} -mcpu=${SF32_CPU} -mthumb -fuse-ld=lld")
+set(CMAKE_EXE_LINKER_FLAGS_INIT "--target=${ARM_NONE_EABI_TARGET} -mcpu=${SF32_CPU} -mfpu=${SF32_FPU} -mfloat-abi=${SF32_FLOAT_ABI} -mthumb -fuse-ld=lld")

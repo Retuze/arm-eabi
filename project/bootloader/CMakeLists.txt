@@ -49,6 +49,8 @@ target_include_directories(sf32_platform INTERFACE
 target_compile_options(sf32_platform INTERFACE
     --target=arm-none-eabi
     -mcpu=cortex-m33
+    -mfpu=fpv5-sp-d16
+    -mfloat-abi=hard
     -mthumb
 )
 target_compile_definitions(sf32_platform INTERFACE
@@ -93,6 +95,8 @@ endif()
 target_link_options(bootloader PRIVATE
     --target=arm-none-eabi
     -mcpu=cortex-m33
+    -mfpu=fpv5-sp-d16
+    -mfloat-abi=hard
     -mthumb
     -T${SF32_LINKER_SCRIPT}
     -nostdlib
