@@ -6,6 +6,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+void uart_write_byte(uint8_t value);
+void uart_wait_tc(void);
+
 void print_int(int x);
 void print_uint(unsigned int x);
 void print_long(long x);

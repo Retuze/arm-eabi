@@ -30,6 +30,7 @@ if(NOT SF32_SFTOOL)
     set(SF32_SFTOOL "${SF32_SFTOOL_DEFAULT}" CACHE FILEPATH "Path to sftool executable" FORCE)
 endif()
 set(SF32_LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/link.ld")
+set(SF32_CLANG_BUILTINS_LIB "${SF32_SOC_DIR}/libclang_rt.builtins-arm.a")
 
 add_library(sf32_platform INTERFACE)
 target_include_directories(sf32_platform INTERFACE
@@ -85,7 +86,11 @@ add_executable(firmware
 
 set_target_properties(firmware PROPERTIES SUFFIX ".elf")
 
-target_link_libraries(firmware PRIVATE sf32_bsp sf32_platform)
+target_link_libraries(firmware PRIVATE
+    sf32_bsp
+    sf32_platform
+    ${SF32_CLANG_BUILTINS_LIB}
+)
 
 if(SF32_ENABLE_WARNINGS)
     target_compile_options(firmware PRIVATE -Wall -Wextra -Wpedantic)
