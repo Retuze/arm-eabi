@@ -1,64 +1,134 @@
 #include "bsp_uart.h"
+
 #include "SF32LB52.h"
 
-static inline void bsp_uart1_write_byte(uint8_t value)
+#include <stddef.h>
+#include <stdint.h>
+
+static inline void uart_write_byte(uint8_t value)
 {
     while ((USART1->ISR & USART_ISR_TXE) == 0U) {
     }
-
     USART1->TDR = value;
 }
 
-static inline void bsp_uart1_write_char(char ch)
+static inline void uart_write_char(char ch)
 {
     if (ch == '\n') {
-        bsp_uart1_write_byte((uint8_t)'\r');
+        uart_write_byte((uint8_t)'\r');
     }
-    bsp_uart1_write_byte((uint8_t)ch);
+    uart_write_byte((uint8_t)ch);
 }
 
-static inline void bsp_uart1_wait_tc(void)
+static inline void uart_wait_tc(void)
 {
     while ((USART1->ISR & USART_ISR_TC) == 0U) {
     }
 }
 
-static void print_uint64_hex(uint64_t value)
+void print_int(int x)
 {
-    int shift = (int)(sizeof(uint64_t) * 8U);
-
-    bsp_uart1_write_char('0');
-    bsp_uart1_write_char('x');
-
-    for (shift -= 4; shift >= 0; shift -= 4) {
-        uint8_t nibble = (uint8_t)((value >> shift) & 0xFU);
-        char ch = (nibble < 10U) ? (char)('0' + nibble) : (char)('a' + (nibble - 10U));
-        bsp_uart1_write_char(ch);
-    }
-}
-
-static void print_float_digits_u32(uint32_t value)
-{
+    uint32_t v;
     char buf[10];
     int idx = 0;
 
-    if (value == 0U) {
-        bsp_uart1_write_char('0');
+    if (x < 0) {
+        uart_write_char('-');
+        x = -x;
+    }
+
+    v = (uint32_t)x;
+    if (v == 0U) {
+        uart_write_char('0');
+        uart_wait_tc();
         return;
     }
 
-    while ((value > 0U) && (idx < (int)sizeof(buf))) {
-        uint32_t digit = value % 10U;
-        buf[idx++] = (char)('0' + (char)digit);
-        value /= 10U;
+    while ((v > 0U) && (idx < (int)sizeof(buf))) {
+        buf[idx++] = (char)('0' + (char)(v % 10U));
+        v /= 10U;
     }
 
     while (idx-- > 0) {
-        bsp_uart1_write_char(buf[idx]);
+        uart_write_char(buf[idx]);
     }
+
+    uart_wait_tc();
 }
 
-static void print_float_fixed6(float value)
+void print_uint(unsigned int x)
+{
+    uint32_t v = (uint32_t)x;
+    char buf[10];
+    int idx = 0;
+
+    if (v == 0U) {
+        uart_write_char('0');
+        uart_wait_tc();
+        return;
+    }
+
+    while ((v > 0U) && (idx < (int)sizeof(buf))) {
+        buf[idx++] = (char)('0' + (char)(v % 10U));
+        v /= 10U;
+    }
+
+    while (idx-- > 0) {
+        uart_write_char(buf[idx]);
+    }
+
+    uart_wait_tc();
+}
+
+void print_long(long x)
+{
+    print_int((int)x);
+}
+
+void print_ulong(unsigned long x)
+{
+    print_uint((unsigned int)x);
+}
+
+void print_llong(long long x)
+{
+    uint64_t v;
+    int shift;
+
+    if (x < 0) {
+        uart_write_char('-');
+        x = -x;
+    }
+
+    v = (uint64_t)x;
+    uart_write_char('0');
+    uart_write_char('x');
+
+    for (shift = 60; shift >= 0; shift -= 4) {
+        uint8_t nibble = (uint8_t)((v >> shift) & 0xFU);
+        uart_write_char((char)((nibble < 10U) ? ('0' + nibble) : ('a' + (nibble - 10U))));
+    }
+
+    uart_wait_tc();
+}
+
+void print_ullong(unsigned long long x)
+{
+    uint64_t v = (uint64_t)x;
+    int shift;
+
+    uart_write_char('0');
+    uart_write_char('x');
+
+    for (shift = 60; shift >= 0; shift -= 4) {
+        uint8_t nibble = (uint8_t)((v >> shift) & 0xFU);
+        uart_write_char((char)((nibble < 10U) ? ('0' + nibble) : ('a' + (nibble - 10U))));
+    }
+
+    uart_wait_tc();
+}
+
+void print_float(float x)
 {
     const float divisors[] = {
         1000000000.0f, 100000000.0f, 10000000.0f, 1000000.0f, 100000.0f,
@@ -74,7 +144,7 @@ static void print_float_fixed6(float value)
         union {
             float f;
             uint32_t u;
-        } u = { value };
+        } u = { x };
         bits = u.u;
     }
 
@@ -83,190 +153,101 @@ static void print_float_fixed6(float value)
 
     if (exp_bits == 0xFFU) {
         if (frac_bits != 0U) {
-            print_str("nan");
+            print_string("nan");
         } else if ((bits & 0x80000000U) != 0U) {
-            print_str("-inf");
+            print_string("-inf");
         } else {
-            print_str("inf");
+            print_string("inf");
         }
         return;
     }
 
     if ((bits & 0x80000000U) != 0U) {
-        bsp_uart1_write_char('-');
-        value = -value;
-    }
-
-    if (value >= 10000000000.0f) {
-        int exp10 = 0;
-        while ((value >= 10.0f) && (exp10 < 99)) {
-            value /= 10.0f;
-            exp10++;
-        }
-
-        {
-            int digit = 0;
-            while (value >= 1.0f) {
-                value -= 1.0f;
-                digit++;
-            }
-            bsp_uart1_write_char((char)('0' + digit));
-        }
-
-        bsp_uart1_write_char('.');
-        for (i = 0; i < 6U; ++i) {
-            int digit = 0;
-            value *= 10.0f;
-            while (value >= 1.0f) {
-                value -= 1.0f;
-                digit++;
-            }
-            bsp_uart1_write_char((char)('0' + digit));
-        }
-
-        bsp_uart1_write_char('e');
-        if (exp10 >= 0) {
-            bsp_uart1_write_char('+');
-        } else {
-            bsp_uart1_write_char('-');
-            exp10 = -exp10;
-        }
-        print_float_digits_u32((uint32_t)exp10);
-        return;
+        uart_write_char('-');
+        x = -x;
     }
 
     for (i = 0; i < (sizeof(divisors) / sizeof(divisors[0])); ++i) {
         int digit = 0;
         float d = divisors[i];
 
-        while (value >= d) {
-            value -= d;
+        while (x >= d) {
+            x -= d;
             digit++;
         }
 
         if ((digit != 0) || started || (d == 1.0f)) {
-            bsp_uart1_write_char((char)('0' + digit));
+            uart_write_char((char)('0' + digit));
             started = 1;
         }
     }
 
-    bsp_uart1_write_char('.');
+    uart_write_char('.');
     for (i = 0; i < 6U; ++i) {
         int digit = 0;
-        value *= 10.0f;
-        while (value >= 1.0f) {
-            value -= 1.0f;
+        x *= 10.0f;
+        while (x >= 1.0f) {
+            x -= 1.0f;
             digit++;
         }
-        bsp_uart1_write_char((char)('0' + digit));
-    }
-}
-
-void print_str(const char *text)
-{
-    if (text == 0) {
-        return;
+        uart_write_char((char)('0' + digit));
     }
 
-    while (*text != '\0') {
-        bsp_uart1_write_char(*text++);
-    }
-
-    bsp_uart1_wait_tc();
+    uart_wait_tc();
 }
 
-void print_char(char value)
+void print_double(double x)
 {
-    bsp_uart1_write_char(value);
-    bsp_uart1_wait_tc();
+    (void)x;
+    print_string("<double>");
 }
 
-void print_i32(int32_t value)
+void print_ldouble(long double x)
 {
-    if (value < 0) {
-        bsp_uart1_write_char('-');
-        value = -value;
-    }
-
-    print_u32((uint32_t)value);
-    bsp_uart1_wait_tc();
+    (void)x;
+    print_string("<ldouble>");
 }
 
-void print_u32(uint32_t value)
+void print_bool(_Bool x)
 {
-    char buf[10];
-    int idx = 0;
-
-    if (value == 0U) {
-        bsp_uart1_write_char('0');
-        bsp_uart1_wait_tc();
-        return;
-    }
-
-    while ((value > 0U) && (idx < (int)sizeof(buf))) {
-        uint32_t digit = value % 10U;
-        buf[idx++] = (char)('0' + (char)digit);
-        value /= 10U;
-    }
-
-    while (idx-- > 0) {
-        bsp_uart1_write_char(buf[idx]);
-    }
-    bsp_uart1_wait_tc();
-}
-
-void print_i64(int64_t value)
-{
-    if (value < 0) {
-        bsp_uart1_write_char('-');
-        value = -value;
-    }
-
-    print_uint64_hex((uint64_t)value);
-    bsp_uart1_wait_tc();
-}
-
-void print_u64(uint64_t value)
-{
-    print_uint64_hex(value);
-    bsp_uart1_wait_tc();
-}
-
-void print_float(float value)
-{
-    print_float_fixed6(value);
-    bsp_uart1_wait_tc();
-}
-
-void print_double(double value)
-{
-    (void)value;
-    print_str("<double>");
-    bsp_uart1_wait_tc();
-}
-
-void print_ptr(const void *value)
-{
-    uintptr_t addr = (uintptr_t)value;
-    int shift = (int)(sizeof(uintptr_t) * 8U);
-
-    bsp_uart1_write_char('0');
-    bsp_uart1_write_char('x');
-
-    for (shift -= 4; shift >= 0; shift -= 4) {
-        uint8_t nibble = (uint8_t)((addr >> shift) & 0xFU);
-        char ch = (nibble < 10U) ? (char)('0' + nibble) : (char)('a' + (nibble - 10U));
-        bsp_uart1_write_char(ch);
-    }
-
-    bsp_uart1_wait_tc();
-}
-
-void print_bool(bool value)
-{
-    if (value) {
-        print_str("true");
+    if (x) {
+        uart_write_char('1');
     } else {
-        print_str("false");
+        uart_write_char('0');
     }
+    uart_wait_tc();
+}
+
+void print_string(const char *s)
+{
+    if (s == 0) {
+        return;
+    }
+
+    while (*s != '\0') {
+        uart_write_char(*s++);
+    }
+
+    uart_wait_tc();
+}
+
+void print_ptr(const void *p)
+{
+    uintptr_t v = (uintptr_t)p;
+    int shift;
+
+    uart_write_char('0');
+    uart_write_char('x');
+
+    for (shift = (int)(sizeof(uintptr_t) * 8U) - 4; shift >= 0; shift -= 4) {
+        uint8_t nibble = (uint8_t)((v >> shift) & 0xFU);
+        uart_write_char((char)((nibble < 10U) ? ('0' + nibble) : ('a' + (nibble - 10U))));
+    }
+
+    uart_wait_tc();
+}
+
+void print_unknown(void)
+{
+    print_string("[?]");
 }
