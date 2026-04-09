@@ -13,6 +13,7 @@ set(SF32_CHIP "SF32LB52" CACHE STRING "Target chip name used by sftool")
 set(SF32_BOARD "SF32LB52-DevKit-Nano" CACHE STRING "Target board name")
 set(SF32_PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
 set(SF32_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+set(SF32_COMMON_DIR "${SF32_REPO_ROOT}/common")
 set(SF32_PART_ROOT "${SF32_REPO_ROOT}/partfrom/SF32LB52x")
 set(SF32_BOARD_DIR "${SF32_PART_ROOT}/board/${SF32_BOARD}")
 set(SF32_SOC_DIR "${SF32_PART_ROOT}/soc")
@@ -37,6 +38,7 @@ target_include_directories(sf32_platform INTERFACE
     ${SF32_HAL_DIR}
     ${SF32_BOARD_DIR}
     ${SF32_SOC_DIR}
+    ${SF32_COMMON_DIR}
     ${SF32_BSP_DIR}/bsp_afio
     ${SF32_BSP_DIR}/bsp_gpio
     ${SF32_BSP_DIR}/bsp_dwt
@@ -71,6 +73,7 @@ add_library(sf32_bsp STATIC
     ${SF32_BSP_DIR}/bsp_nvic/bsp_nvic.c
     ${SF32_BSP_DIR}/bsp_rcc/bsp_rcc.c
     ${SF32_BSP_DIR}/bsp_uart/bsp_uart.c
+    ${SF32_COMMON_DIR}/print/print.c
 )
 target_link_libraries(sf32_bsp PUBLIC sf32_platform)
 
