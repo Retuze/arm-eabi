@@ -3,6 +3,7 @@
 #include "SF32LB52.h"
 #include "bb_qspi.h"
 #include "board.h"
+#include "bsp_dwt.h"
 #include "bsp_gpio.h"
 #include "bsp_uart.h"
 
@@ -14,6 +15,41 @@
 #define LCD_CMD_CASET  0x2A
 #define LCD_CMD_RASET  0x2B
 #define LCD_CMD_RAMWR  0x2C
+
+static SF32_RAMFUNC __attribute__((noinline)) void lcd_push_color_pixels_ram(
+    HPSYS_GPIO_TypeDef *gpio,
+    uint32_t pixel_count,
+    uint32_t clk_mask,
+    uint32_t hb_hi_set,
+    uint32_t hb_hi_clr,
+    uint32_t hb_lo_set,
+    uint32_t hb_lo_clr,
+    uint32_t lb_hi_set,
+    uint32_t lb_hi_clr,
+    uint32_t lb_lo_set,
+    uint32_t lb_lo_clr)
+{
+    uint32_t i;
+
+    for (i = 0U; i < pixel_count; ++i) {
+        gpio->DOCR0.R = hb_hi_clr | clk_mask;
+        gpio->DOSR0.R = hb_hi_set;
+        gpio->DOSR0.R = clk_mask;
+
+        gpio->DOCR0.R = hb_lo_clr | clk_mask;
+        gpio->DOSR0.R = hb_lo_set;
+        gpio->DOSR0.R = clk_mask;
+
+        gpio->DOCR0.R = lb_hi_clr | clk_mask;
+        gpio->DOSR0.R = lb_hi_set;
+        gpio->DOSR0.R = clk_mask;
+
+        gpio->DOCR0.R = lb_lo_clr | clk_mask;
+        gpio->DOSR0.R = lb_lo_set;
+        gpio->DOSR0.R = clk_mask;
+    }
+    gpio->DOCR0.R = clk_mask;
+}
 
 static void lcd_write_cmd_02(uint8_t addr)
 {
@@ -167,9 +203,9 @@ void lcd_fill_color(uint16_t color)
 void lcd_fill_rect(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color)
 {
     uint32_t pixel_count;
-    uint32_t i;
     uint8_t high_byte;
     uint8_t low_byte;
+    uint32_t dwt_us = 0U;
 
     if ((x0 > x1) || (y0 > y1)) {
         return;
@@ -191,11 +227,55 @@ void lcd_fill_rect(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t 
     pixel_count = (uint32_t)(x1 - x0 + 1U) * (uint32_t)(y1 - y0 + 1U);
 
     lcd_write_cmd_12(LCD_CMD_RAMWR);
-    for (i = 0U; i < pixel_count; ++i) {
-        qspi_send_byte_4wire(high_byte);
-        qspi_send_byte_4wire(low_byte);
+    sf32_dwt_set_us(0U);
+    {
+        HPSYS_GPIO_TypeDef *gpio = HPSYS_GPIO;
+        const uint32_t clk_mask = (1UL << LCD_CLK);
+        const uint32_t d0_mask = (1UL << LCD_D0);
+        const uint32_t d1_mask = (1UL << LCD_D1);
+        const uint32_t d2_mask = (1UL << LCD_D2);
+        const uint32_t d3_mask = (1UL << LCD_D3);
+        const uint32_t data_mask = d0_mask | d1_mask | d2_mask | d3_mask;
+
+        const uint32_t hb_hi_set = ((high_byte & 0x10U) ? d0_mask : 0U)
+            | ((high_byte & 0x20U) ? d1_mask : 0U)
+            | ((high_byte & 0x40U) ? d2_mask : 0U)
+            | ((high_byte & 0x80U) ? d3_mask : 0U);
+        const uint32_t hb_hi_clr = data_mask & ~hb_hi_set;
+        const uint32_t hb_lo_set = ((high_byte & 0x01U) ? d0_mask : 0U)
+            | ((high_byte & 0x02U) ? d1_mask : 0U)
+            | ((high_byte & 0x04U) ? d2_mask : 0U)
+            | ((high_byte & 0x08U) ? d3_mask : 0U);
+        const uint32_t hb_lo_clr = data_mask & ~hb_lo_set;
+
+        const uint32_t lb_hi_set = ((low_byte & 0x10U) ? d0_mask : 0U)
+            | ((low_byte & 0x20U) ? d1_mask : 0U)
+            | ((low_byte & 0x40U) ? d2_mask : 0U)
+            | ((low_byte & 0x80U) ? d3_mask : 0U);
+        const uint32_t lb_hi_clr = data_mask & ~lb_hi_set;
+        const uint32_t lb_lo_set = ((low_byte & 0x01U) ? d0_mask : 0U)
+            | ((low_byte & 0x02U) ? d1_mask : 0U)
+            | ((low_byte & 0x04U) ? d2_mask : 0U)
+            | ((low_byte & 0x08U) ? d3_mask : 0U);
+        const uint32_t lb_lo_clr = data_mask & ~lb_lo_set;
+
+        lcd_push_color_pixels_ram(gpio,
+                                  pixel_count,
+                                  clk_mask,
+                                  hb_hi_set,
+                                  hb_hi_clr,
+                                  hb_lo_set,
+                                  hb_lo_clr,
+                                  lb_hi_set,
+                                  lb_hi_clr,
+                                  lb_lo_set,
+                                  lb_lo_clr);
     }
+    dwt_us = sf32_dwt_get_us();
     qspi_cmd_end();
+    printf("lcd_fill_rect tx: pixels=%u, us=%u\n",
+           (unsigned int)pixel_count,
+           (unsigned int)dwt_us);
 }
 
 void lcd_draw_pixel(uint16_t x, uint16_t y, uint16_t color)
