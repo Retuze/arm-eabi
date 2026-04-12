@@ -150,7 +150,7 @@ static uint32_t sf32_rcc_get_sysclk_hz(void)
     }
 }
 
-static uint32_t sf32_rcc_get_hclk_hz(void)
+uint32_t sf32_rcc_get_hclk_hz(void)
 {
     uint32_t sysclk = sf32_rcc_get_sysclk_hz();
     uint32_t hdiv = (HPSYS_RCC->CFGR.R & HPSYS_RCC_CFGR_HDIV_Msk) >>

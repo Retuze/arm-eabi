@@ -17,3 +17,6 @@
  * This call also reconfigures SysTick for a 1ms tick based on the new HCLK.
  */
 int sf32_rcc_set_hclk_hz(uint32_t target_hz);
+
+/* Read current HCLK frequency from RCC registers. */
+uint32_t sf32_rcc_get_hclk_hz(void);
