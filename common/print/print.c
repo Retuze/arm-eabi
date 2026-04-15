@@ -1,8 +1,18 @@
 #include "print.h"
 #include <limits.h>
 #include <stdint.h>
+#include "bsp_uart.h"
 
 /* ----------- tiny helpers (no libc string.h) ----------- */
+
+int u_write(const char *data, size_t size)
+{
+    for(size_t i = 0; i < size; i++)
+        {
+            uart_write_byte(data[i]);
+        }
+    return size;
+}
 
 static size_t u_strlen(const char *s)
 {
