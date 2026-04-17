@@ -16,14 +16,14 @@
  * Typical MCU .c:
  *   #define LOG_TAG "BLE"
  *   #define LOG_LEVEL LOG_LEVEL_WARN
- *   #include "print.h"
+ *   #include "ulibc.h"
  *   #include "log.h"
  */
 #pragma once
 #ifndef LOG_H
 #define LOG_H
 
-#include "print.h"
+#include "ulibc.h"
 #ifndef printf
 #include <stdio.h>
 #endif

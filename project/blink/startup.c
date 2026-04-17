@@ -1,6 +1,3 @@
-#include <stddef.h>
-#include <stdint.h>
-
 #include "bsp.h"
 
 extern size_t __StackTop;

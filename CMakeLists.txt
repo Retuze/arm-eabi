@@ -43,10 +43,11 @@ target_link_libraries(drivers PUBLIC platform)
 # ---------------------------------------------------------------------------
 add_library(ulibc STATIC
     ${REPO_ROOT}/ulibc/src/print.c
-    ${REPO_ROOT}/ulibc/src/barelib.c
+    ${REPO_ROOT}/ulibc/src/ulibc.c
 )
 target_include_directories(ulibc
-    PUBLIC ${REPO_ROOT}/ulibc/include
+    PUBLIC  ${REPO_ROOT}/ulibc/include
+    PRIVATE ${REPO_ROOT}/ulibc/src
 )
 target_link_libraries(ulibc
     PUBLIC platform
