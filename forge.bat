@@ -30,11 +30,15 @@ if "%~1"=="" (
         echo   !PROJ_%%i!
     )
     echo.
-    echo Usage: forge ^<project_name^>
+    echo Usage: forge ^<project^> [--debug^|--release]
     exit /b 0
 )
 
 set "TARGET=%~1"
+
+set "PRESET=debug"
+if /i "%~2"=="--release" set "PRESET=release"
+if /i "%~2"=="--debug" set "PRESET=debug"
 
 :: Exact match
 set "MATCHED="
@@ -78,30 +82,27 @@ if not defined MATCHED (
 )
 
 set "PROJECT_NAME=%MATCHED%"
-set "PROJECT_SRC=%PROJECT_DIR%\%PROJECT_NAME%"
-set "BUILD_DIR=%PROJECT_SRC%\build"
+set "BUILD_DIR=%ROOT%\build\%PRESET%"
 
-echo [forge] Building: %PROJECT_NAME%
-echo [forge] Source:    %PROJECT_SRC%
+echo [forge] Building: %PROJECT_NAME% (%PRESET%)
 echo [forge] Build dir: %BUILD_DIR%
 echo.
 
-:: CMake configure + build via project's own preset
-cmake --preset default -S "%PROJECT_SRC%"
+:: CMake configure + build from repo root
+cmake --preset %PRESET% -S "%ROOT%"
 if errorlevel 1 (
     echo.
     echo [forge] CMake configure failed.
     exit /b 1
 )
 
-cmake --build "%BUILD_DIR%"
+cmake --build "%BUILD_DIR%" --target %PROJECT_NAME%
 if errorlevel 1 (
     echo.
     echo [forge] Build failed.
     exit /b 1
 )
 
-:: Firmware is output to project/build/
 set "ELF_PATH=%BUILD_DIR%\%PROJECT_NAME%.elf"
 
 :: Generate flash.bat next to the firmware
