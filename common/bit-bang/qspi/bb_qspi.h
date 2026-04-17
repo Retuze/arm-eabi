@@ -1,35 +1,26 @@
 #pragma once
-#ifndef _BB_QSPI_H_
-#define _BB_QSPI_H_
+#ifndef BB_QSPI_H
+#define BB_QSPI_H
 
 #include <stdint.h>
 
-/* 初始化模拟 QSPI：CLK/CS/D0~D3 输出，空闲时 CLK=0、CS=1 */
-void qspi_init(void);
+typedef struct {
+    uint32_t pin_clk;
+    uint32_t pin_cs;
+    uint32_t pin_d0;
+    uint32_t pin_d1;
+    uint32_t pin_d2;
+    uint32_t pin_d3;
+} bb_qspi_t;
 
-/* 命令开始：CS 拉低 */
-void qspi_cmd_start(void);
+void    bb_qspi_init(const bb_qspi_t *dev);
+void    bb_qspi_cs_low(const bb_qspi_t *dev);
+void    bb_qspi_cs_high(const bb_qspi_t *dev);
+void    bb_qspi_send_byte(const bb_qspi_t *dev, uint8_t data);
+void    bb_qspi_send_byte_4wire(const bb_qspi_t *dev, uint8_t data);
+void    bb_qspi_send(const bb_qspi_t *dev, const uint8_t *data, uint16_t len);
+void    bb_qspi_send_4wire(const bb_qspi_t *dev, const uint8_t *data, uint16_t len);
+uint8_t bb_qspi_recv_byte(const bb_qspi_t *dev);
+void    bb_qspi_recv(const bb_qspi_t *dev, uint8_t *data, uint16_t len);
 
-/* 命令结束：CS 拉高 */
-void qspi_cmd_end(void);
-
-/* 单线发送 1 字节，位序 MSB->LSB（bit7 到 bit0） */
-void qspi_send_byte(uint8_t data);
-
-/* 4 线发送 1 字节，先发高 4 位再发低 4 位 */
-void qspi_send_byte_4wire(uint8_t data);
-
-/* 单线发送 len 字节，按 buffer 顺序 */
-void qspi_send_data(const uint8_t *data, uint16_t len);
-
-/* 4 线发送 len 字节，按 buffer 顺序 */
-void qspi_send_data_4wire(const uint8_t *data, uint16_t len);
-
-/* 单线读取 1 字节，位序 MSB->LSB */
-uint8_t qspi_read_byte(void);
-
-/* 单线读取 len 字节，按 buffer 顺序存放 */
-void qspi_read_data(uint8_t *data, uint16_t len);  
-
-
-#endif // _BB_QSPI_H_
+#endif
