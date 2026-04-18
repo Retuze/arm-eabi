@@ -5,6 +5,9 @@ __RAM_SIZE    = 0x00080000;
 __STACK_SIZE  = 0x00004000;
 __HEAP_SIZE   = 0x00000000;
 
+__StackTop    = __RAM_BASE + __RAM_SIZE;
+__StackLimit  = __StackTop - __STACK_SIZE;
+
 MEMORY
 {
 	ROM (rx)  : ORIGIN = __ROM_BASE, LENGTH = __ROM_SIZE
@@ -35,26 +38,6 @@ SECTIONS
     {
         *(.ARM.extab* .gnu.linkonce.armextab.*)
     } > ROM
-
-	.stack (NOLOAD) :
-	{
-		. = ALIGN(8);
-		__StackLimit = .;
-		. = . + __STACK_SIZE;
-		. = ALIGN(8);
-		__StackTop = .;
-	} > RAM
-	PROVIDE(__stack = __StackTop);
-
-	.heap (NOLOAD) :
-	{
-		. = ALIGN(8);
-		__end__ = .;
-		PROVIDE(end = .);
-		. = . + __HEAP_SIZE;
-		. = ALIGN(8);
-		__HeapLimit = .;
-	} > RAM
 
 	.data :
 	{
@@ -90,6 +73,16 @@ SECTIONS
 		__bss_end__ = .;
 	} > RAM
 
+	._user_heap_stack (NOLOAD) :
+	{
+		. = ALIGN(8);
+		PROVIDE(end = .);
+		PROVIDE(_end = .);
+		. = . + __HEAP_SIZE;
+		. = . + __STACK_SIZE;
+		. = ALIGN(8);
+	} > RAM
+
 	.copy.table :
 	{
 		. = ALIGN(4);
@@ -117,4 +110,4 @@ SECTIONS
 	__exidx_end = .;
 }
 
-ASSERT(__StackTop <= ORIGIN(RAM) + LENGTH(RAM), "RAM overflow: stack exceeds RAM")
+PROVIDE(__stack = __StackTop);

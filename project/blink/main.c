@@ -26,6 +26,7 @@ int main(void)
     print(", double=");
     print(2.718281828);
     println("");
+    printf("%s %d %f %f\n", "end of print", 1234567890, 3.14159f, 2.718281828);
 
     while (1) {
         digitalToggle(31);
