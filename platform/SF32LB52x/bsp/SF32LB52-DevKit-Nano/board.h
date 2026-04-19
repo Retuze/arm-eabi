@@ -11,7 +11,7 @@
 #ifndef _BOARD_H_
 #define _BOARD_H_
 
-/* Known on-board display GPIOs */
+/* Known on-board display GPIOs (used by common/lcd: lcd_qspi → bit-bang bus, lcd_bus) */
 #define LCD_BL 1
 #define LCD_CS 3
 #define LCD_RST 0
@@ -21,6 +21,14 @@
 #define LCD_D1 6
 #define LCD_D2 7
 #define LCD_D3 8
+
+/*
+ * Logical panel size for lcd_panel (must match the driver linked for lcd_test in
+ * project/lcd_test/CMakeLists.txt, LCD_PANEL).
+ * Edit here when using panel/nv3030b_tft (e.g. 240×280); defaults match on-board CO5300 class panel.
+ */
+#define LCD_WIDTH 466
+#define LCD_HEIGHT 466
 
 /* Known on-board touch GPIOs */
 #define CTP_INT 9

@@ -57,16 +57,19 @@ target_link_libraries(ulibc
 
 # ---------------------------------------------------------------------------
 # common — platform-agnostic utilities (bit-bang drivers, log, etc.)
+# Panel drivers live under common/lcd/panel/; each firmware picks one (see project/lcd_test/CMakeLists.txt).
 # ---------------------------------------------------------------------------
 add_library(common STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/common/bit-bang/qspi/bb_qspi.c
     ${CMAKE_CURRENT_SOURCE_DIR}/common/bit-bang/spi/bb_spi.c
     ${CMAKE_CURRENT_SOURCE_DIR}/common/bit-bang/i2c/bb_i2c.c
     ${CMAKE_CURRENT_SOURCE_DIR}/common/bit-bang/uart/bb_uart.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/lcd/lcd.c
 )
 target_include_directories(common
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/common
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/common/bit-bang
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/common/lcd
 )
 target_link_libraries(common PUBLIC platform)
 
