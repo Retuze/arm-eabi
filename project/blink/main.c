@@ -1,5 +1,7 @@
+#include <stdio.h>
+#include <ulibc_print.h>
+
 #include "bsp.h"
-#include "ulibc.h"
 
 int main(void)
 {

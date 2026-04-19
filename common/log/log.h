@@ -1,6 +1,6 @@
 /*
- * Logging via printf. Include print.h before this header so printf maps to u_printf
- * on firmware that links print.c.
+ * Logging via printf. Include <stdio.h> before this header.
+ * on firmware that links ulibc (stdio).
  *
  * Optional per .c:
  *   #define LOG_TAG "WIFI"     // omit = no "[tag]" segment in the line
@@ -16,17 +16,14 @@
  * Typical MCU .c:
  *   #define LOG_TAG "BLE"
  *   #define LOG_LEVEL LOG_LEVEL_WARN
- *   #include "ulibc.h"
+ *   #include <stdio.h>
  *   #include "log.h"
  */
 #pragma once
 #ifndef LOG_H
 #define LOG_H
 
-#include "ulibc.h"
-#ifndef printf
 #include <stdio.h>
-#endif
 
 /** Threshold: only lines with severity >= LOG_LEVEL are emitted (preprocessor constant). */
 #define LOG_LEVEL_TRACE  0

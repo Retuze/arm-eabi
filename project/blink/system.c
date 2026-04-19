@@ -1,5 +1,7 @@
+#include <stddef.h>
+#include <stdio.h>
+
 #include "bsp.h"
-#include "ulibc.h"
 
 extern const uintptr_t g_pfnVectors[];
 
@@ -42,7 +44,7 @@ void delay(uint32_t ms)
     }
 }
 
-int u_write(const char *data, size_t size)
+int ulibc_write(const char *data, size_t size)
 {
     if (!data || size == 0U) {
         return 0;
@@ -51,7 +53,7 @@ int u_write(const char *data, size_t size)
     return (int)size;
 }
 
-int u_read(char *buf, size_t count)
+int ulibc_read(char *buf, size_t count)
 {
     if (!buf || count == 0U) {
         return 0;

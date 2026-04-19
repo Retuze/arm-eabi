@@ -40,11 +40,18 @@ target_include_directories(platform PUBLIC
 )
 
 # ---------------------------------------------------------------------------
-# ulibc — micro libc (freestanding printf, memset/memcpy, compiler builtins)
+# ulibc — freestanding std headers (stdio/string/stdlib/…) + format engine
 # ---------------------------------------------------------------------------
 add_library(ulibc STATIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/ulibc/src/print.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/ulibc/src/ulibc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/ulibc/src/string.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/ulibc/src/format.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/ulibc/src/stdio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/ulibc/src/heap.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/ulibc/src/strto.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/ulibc/src/math.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/ulibc/src/errno_stub.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/ulibc/src/time_stub.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/ulibc/src/assert_fail.c
 )
 target_include_directories(ulibc
     PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/ulibc/include
@@ -73,6 +80,9 @@ target_include_directories(common
 )
 target_link_libraries(common PUBLIC platform)
 
+# wasm3 — 顶层始终加入共享静态库 m3（缺上游时见 third_party/wasm3 与 docs/third_party/wasm3.md）。
+add_subdirectory(third_party/wasm3)
+
 # ---------------------------------------------------------------------------
 # Warnings (applied to all libraries when ENABLE_WARNINGS is ON)
 # ---------------------------------------------------------------------------
@@ -80,6 +90,7 @@ if(ENABLE_WARNINGS)
     target_compile_options(platform PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(ulibc    PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(common   PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(m3 PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 # ---------------------------------------------------------------------------
@@ -87,3 +98,4 @@ endif()
 # ---------------------------------------------------------------------------
 add_subdirectory(project/blink)
 add_subdirectory(project/lcd_test)
+add_subdirectory(project/wasm3_test)

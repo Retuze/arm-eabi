@@ -1,17 +1,11 @@
 #include <limits.h>
+#include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
-#include "print.h"
+#include "format.h"
 
-size_t u_strlen(const char *s)
-{
-    size_t n = 0;
-    while (s && s[n])
-        ++n;
-    return n;
-}
-
-void u_memrev(char *a, size_t n)
+static void memrev(char *a, size_t n)
 {
     size_t i = 0, j = n;
     while (i < --j) {
@@ -29,7 +23,7 @@ static unsigned u_utoa_dec(char *buf, unsigned v)
         buf[n++] = (char)('0' + (v % 10u));
         v /= 10u;
     } while (v);
-    u_memrev(buf, n);
+    memrev(buf, n);
     return n;
 }
 
@@ -57,7 +51,7 @@ static unsigned u_ulltoa_hex_ll(char *buf, unsigned long long v, int upper)
         buf[n++] = d[v & 0xFull];
         v >>= 4;
     } while (v);
-    u_memrev(buf, n);
+    memrev(buf, n);
     return n;
 }
 
@@ -335,7 +329,7 @@ static unsigned u_umaxtoa_oct(char *buf, uintmax_t v)
         buf[n++] = (char)('0' + (char)(v & (uintmax_t)7));
         v >>= 3;
     }
-    u_memrev(buf, n);
+    memrev(buf, n);
     return n;
 }
 
@@ -543,7 +537,7 @@ static int ufmt_emit_p(UFmtCtx *f, void *p, const USpec *sp)
 
 static int ufmt_emit_str(UFmtCtx *f, const char *s, const USpec *sp)
 {
-    size_t slen = u_strlen(s);
+    size_t slen = strlen(s);
     if (sp->has_prec && sp->prec < slen)
         slen = sp->prec;
     return ufmt_emit_padded_field(f, s, slen, sp, 1);
@@ -643,7 +637,7 @@ static size_t u_put_u64dec(char *buf, uint64_t v)
         buf[n++] = (char)('0' + (char)(v % 10ull));
         v /= 10ull;
     } while (v);
-    u_memrev(buf, n);
+    memrev(buf, n);
     return n;
 }
 
@@ -849,7 +843,7 @@ static int ufmt_main(UFmtCtx *f, const char *fmt, va_list ap)
     return err;
 }
 
-/* ----------- u_write backend ----------- */
+/* ----------- ulibc_write backend ----------- */
 
 static int sink_write_raw(void *ctx, const char *p, size_t n)
 {
@@ -857,7 +851,7 @@ static int sink_write_raw(void *ctx, const char *p, size_t n)
     if (n == 0)
         return 0;
     {
-        int w = u_write(p, n);
+        int w = ulibc_write(p, n);
         if (w < 0)
             return w;
         if ((size_t)w != n)
@@ -866,23 +860,12 @@ static int sink_write_raw(void *ctx, const char *p, size_t n)
     }
 }
 
-int u_vprintf(const char *fmt, va_list ap)
+int ulibc_format_vprintf(const char *fmt, va_list ap)
 {
     UFmtCtx f = {sink_write_raw, 0, (size_t)0};
     if (ufmt_main(&f, fmt, ap) != 0)
         return -1;
     return (int)f.total;
-}
-
-int u_printf(const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    {
-        int r = u_vprintf(fmt, ap);
-        va_end(ap);
-        return r;
-    }
 }
 
 typedef struct {
@@ -903,7 +886,7 @@ static int sink_sn_raw(void *ctx, const char *src, size_t n)
     return (int)n;
 }
 
-int u_vsnprintf(char *buf, size_t bufsize, const char *fmt, va_list ap)
+int ulibc_format_vsnprintf(char *buf, size_t bufsize, const char *fmt, va_list ap)
 {
     SNCtx s;
     UFmtCtx f;
@@ -929,16 +912,6 @@ int u_vsnprintf(char *buf, size_t bufsize, const char *fmt, va_list ap)
     return (int)total;
 }
 
-int u_snprintf(char *buf, size_t bufsize, const char *fmt, ...)
-{
-    va_list ap;
-    int r;
-    va_start(ap, fmt);
-    r = u_vsnprintf(buf, bufsize, fmt, ap);
-    va_end(ap);
-    return r;
-}
-
 /* -------- print_* helpers: ll decimal + default %f-style (u_dtoa_dec, no libc format) -------- */
 
 static size_t u_ulltoa_dec_ll(char *buf, unsigned long long v)
@@ -948,7 +921,7 @@ static size_t u_ulltoa_dec_ll(char *buf, unsigned long long v)
         buf[n++] = (char)('0' + (unsigned)(v % 10ull));
         v /= 10ull;
     } while (v);
-    u_memrev(buf, n);
+    memrev(buf, n);
     return n;
 }
 
@@ -1085,42 +1058,42 @@ void print_int(int x)
 {
     char b[12];
     unsigned n = u_itoa_dec(b, x);
-    (void)u_write(b, (size_t)n);
+    (void)ulibc_write(b, (size_t)n);
 }
 
 void print_uint(unsigned int x)
 {
     char b[11];
     unsigned n = u_utoa_dec(b, x);
-    (void)u_write(b, (size_t)n);
+    (void)ulibc_write(b, (size_t)n);
 }
 
 void print_long(long x)
 {
     char b[22];
     size_t n = u_slltoa(b, (long long)x);
-    (void)u_write(b, n);
+    (void)ulibc_write(b, n);
 }
 
 void print_ulong(unsigned long x)
 {
     char b[22];
     size_t n = u_ulltoa_dec_ll(b, (unsigned long long)x);
-    (void)u_write(b, n);
+    (void)ulibc_write(b, n);
 }
 
 void print_llong(long long x)
 {
     char b[22];
     size_t n = u_slltoa(b, x);
-    (void)u_write(b, n);
+    (void)ulibc_write(b, n);
 }
 
 void print_ullong(unsigned long long x)
 {
     char b[22];
     size_t n = u_ulltoa_dec_ll(b, x);
-    (void)u_write(b, n);
+    (void)ulibc_write(b, n);
 }
 
 void print_double(double x)
@@ -1128,7 +1101,7 @@ void print_double(double x)
     char b[48];
     size_t n = u_dtoa_dec(b, sizeof b, x);
     if (n > 0u)
-        (void)u_write(b, n);
+        (void)ulibc_write(b, n);
 }
 
 void print_float(float x)
@@ -1139,16 +1112,16 @@ void print_float(float x)
 void print_bool(bool x)
 {
     if (x)
-        (void)u_write("true", 4);
+        (void)ulibc_write("true", 4);
     else
-        (void)u_write("false", 5);
+        (void)ulibc_write("false", 5);
 }
 
 void print_string(const char *s)
 {
     if (!s)
         s = "(null)";
-    (void)u_write(s, u_strlen(s));
+    (void)ulibc_write(s, strlen(s));
 }
 
 void print_ptr(const void *p)
@@ -1156,11 +1129,11 @@ void print_ptr(const void *p)
     char buf[32];
     size_t n = u_ptr_fmt(buf, sizeof buf, p);
     if (n > 0u)
-        (void)u_write(buf, n);
+        (void)ulibc_write(buf, n);
 }
 
 void print_unknown(void)
 {
-    (void)u_write("?", 1);
+    (void)ulibc_write("?", 1);
 }
 
