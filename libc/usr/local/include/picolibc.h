@@ -28,7 +28,7 @@
 #undef __FSTAT_BUFSIZ
 
 /* use global errno variable */
-#define __GLOBAL_ERRNO
+#undef __GLOBAL_ERRNO
 
 /* Use bitfields in packed structs */
 #define __HAVE_BITFIELDS_IN_PACKED_STRUCTS
@@ -139,18 +139,18 @@
 #undef __SEMIHOST
 
 /* Disable multi-thread support */
-#define __SINGLE_THREAD
+#undef __SINGLE_THREAD
 
 #undef __STDIO_EXIT_FLUSH
 
 /* Perform POSIX-conforming file locking for all stdio operations */
-#undef __STDIO_LOCKING
+#define __STDIO_LOCKING
 
 /* use thread local storage */
-#undef __THREAD_LOCAL_STORAGE
+#define __THREAD_LOCAL_STORAGE
 
 /* _set_tls and _init_tls functions available */
-#undef __THREAD_LOCAL_STORAGE_API
+#define __THREAD_LOCAL_STORAGE_API
 
 /* Use Raspberry Pi RP2040 CPUID register to index thread local storage value */
 #undef __THREAD_LOCAL_STORAGE_RP2040
