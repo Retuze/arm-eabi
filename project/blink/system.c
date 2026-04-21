@@ -1,5 +1,5 @@
 #include <stddef.h>
-#include <stdio.h>
+#include <stdint.h>
 
 #include "bsp.h"
 
@@ -42,21 +42,4 @@ void delay(uint32_t ms)
     uint32_t start = millis();
     while ((uint32_t)(millis() - start) < ms) {
     }
-}
-
-int ulibc_write(const char *data, size_t size)
-{
-    if (!data || size == 0U) {
-        return 0;
-    }
-    rtt_write(data, (uint32_t)size);
-    return (int)size;
-}
-
-int ulibc_read(char *buf, size_t count)
-{
-    if (!buf || count == 0U) {
-        return 0;
-    }
-    return (int)rtt_read(buf, (uint32_t)count);
 }

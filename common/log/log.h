@@ -1,6 +1,6 @@
 /*
  * Logging via printf. Include <stdio.h> before this header.
- * on firmware that links ulibc (stdio).
+ * on firmware that links picolibc (stdio).
  *
  * Optional per .c:
  *   #define LOG_TAG "WIFI"     // omit = no "[tag]" segment in the line

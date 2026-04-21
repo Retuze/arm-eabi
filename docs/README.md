@@ -4,5 +4,4 @@
 
 | 文档 | 说明 |
 |------|------|
-| [ulibc.md](ulibc.md) | 标准头文件（stdio/stdlib/…）、`ulibc_write`、堆大小 |
-| [third_party/wasm3.md](third_party/wasm3.md) | 拉取 wasm3、顶层始终编共享 `m3`、固件里 `target_link_libraries(… m3)` |
+| [picolibc.md](picolibc.md) | Picolibc 目录布局、显式链接、syscall 说明 |

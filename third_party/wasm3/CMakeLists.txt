@@ -34,7 +34,7 @@ target_include_directories(m3 PUBLIC "${CMAKE_CURRENT_LIST_DIR}/upstream/source"
 
 target_compile_features(m3 PRIVATE c_std_99)
 
-target_link_libraries(m3 PUBLIC ulibc)
+target_link_libraries(m3 PUBLIC picolibc_rt)
 
 if(CMAKE_C_COMPILER_ID MATCHES "MSVC")
     # MSVC: extend here if you build with cl
