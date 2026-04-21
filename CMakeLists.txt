@@ -16,13 +16,19 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/firmware.cmake)
 # platform — arch flags, BSP headers, HAL + LL peripheral drivers
 # ---------------------------------------------------------------------------
 add_library(platform STATIC
+    ${PLATFORM_DIR}/bsp/SF32LB52-DevKit-Nano/board.c
     ${PLATFORM_DIR}/drivers/hal/hal_afio.c
     ${PLATFORM_DIR}/drivers/hal/hal_gpio.c
+    ${PLATFORM_DIR}/drivers/hal/hal_pwm.c
     ${PLATFORM_DIR}/drivers/hal/hal_uart.c
+    ${PLATFORM_DIR}/drivers/ll/ll_atim.c
     ${PLATFORM_DIR}/drivers/ll/ll_dwt.c
+    ${PLATFORM_DIR}/drivers/ll/ll_gpio.c
     ${PLATFORM_DIR}/drivers/ll/ll_nvic.c
+    ${PLATFORM_DIR}/drivers/ll/ll_pinmux.c
     ${PLATFORM_DIR}/drivers/ll/ll_rcc.c
     ${PLATFORM_DIR}/drivers/ll/ll_rtt.c
+    ${PLATFORM_DIR}/drivers/ll/ll_uart.c
 )
 target_compile_options(platform PUBLIC
     --target=arm-none-eabi
@@ -32,6 +38,8 @@ target_compile_options(platform PUBLIC
     -mthumb
 )
 target_include_directories(platform PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/bit-bang
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/lcd
     ${PLATFORM_DIR}/bsp
     ${PLATFORM_DIR}/bsp/SF32LB52-DevKit-Nano
     ${PLATFORM_DIR}/drivers/hal
@@ -67,17 +75,10 @@ if(NOT EXISTS "${_PICOLIBC_COMPILER_RT}")
     message(FATAL_ERROR "缺少 compiler-rt：\n  ${_PICOLIBC_COMPILER_RT}")
 endif()
 
-add_library(picolibc_syscalls STATIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/common/picolibc_syscalls.c
-)
-target_include_directories(picolibc_syscalls SYSTEM PRIVATE "${LIBC_ROOT}/include")
-target_link_libraries(picolibc_syscalls PRIVATE platform)
-
 add_library(picolibc_rt INTERFACE)
 target_include_directories(picolibc_rt SYSTEM INTERFACE "${LIBC_ROOT}/include")
 target_link_libraries(picolibc_rt INTERFACE
     "${_LIBC_A}"
-    picolibc_syscalls
     "${_PICOLIBC_COMPILER_RT}"
 )
 
@@ -90,6 +91,9 @@ add_library(common STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/common/bit-bang/i2c/bb_i2c.c
     ${CMAKE_CURRENT_SOURCE_DIR}/common/bit-bang/uart/bb_uart.c
     ${CMAKE_CURRENT_SOURCE_DIR}/common/lcd/lcd.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/lcd/bus/lcd_qspi_bitbang.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/lcd/panel/co5300_oled.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/lcd/panel/nv3030b_tft.c
 )
 target_include_directories(common
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/common
@@ -103,7 +107,6 @@ target_link_libraries(common PUBLIC platform)
 # ---------------------------------------------------------------------------
 if(ENABLE_WARNINGS)
     target_compile_options(platform PRIVATE -Wall -Wextra -Wpedantic)
-    target_compile_options(picolibc_syscalls PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(common PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 

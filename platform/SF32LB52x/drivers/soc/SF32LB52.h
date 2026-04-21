@@ -20,6 +20,7 @@ typedef union {
 
 #define HPSYS_RCC_BASE       (0x50000000UL)
 #define HPSYS_PINMUX_BASE    (0x50003000UL)
+#define ATIM1_BASE           (0x50004000UL)
 #define HPSYS_CFG_BASE       (0x5000B000UL)
 #define USART1_BASE          (0x50084000UL)
 #define USART2_BASE          (0x50085000UL)
@@ -202,6 +203,35 @@ typedef struct {
 } BTIM_TypeDef;
 
 typedef struct {
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t SMCR;
+    volatile uint32_t DIER;
+    volatile uint32_t SR;
+    volatile uint32_t EGR;
+    volatile uint32_t CCMR1;
+    volatile uint32_t CCMR2;
+    volatile uint32_t CCER;
+    volatile uint32_t CNT;
+    volatile uint32_t PSC;
+    volatile uint32_t ARR;
+    volatile uint32_t RCR;
+    volatile uint32_t CCR1;
+    volatile uint32_t CCR2;
+    volatile uint32_t CCR3;
+    volatile uint32_t CCR4;
+    volatile uint32_t BDTR;
+    volatile uint32_t RESERVED0[3];
+    volatile uint32_t CCMR3;
+    volatile uint32_t CCR5;
+    volatile uint32_t CCR6;
+    volatile uint32_t AF1;
+    volatile uint32_t AF2;
+    volatile uint32_t RESERVED1[2];
+    volatile uint32_t DBGSEL;
+} ATIM_TypeDef;
+
+typedef struct {
     volatile uint32_t CR;
     volatile uint32_t WER;
     volatile uint32_t WSR;
@@ -288,6 +318,7 @@ typedef struct {
 
 #define HPSYS_RCC      ((HPSYS_RCC_TypeDef *)HPSYS_RCC_BASE)
 #define HPSYS_PINMUX   ((HPSYS_PINMUX_TypeDef *)HPSYS_PINMUX_BASE)
+#define ATIM1          ((ATIM_TypeDef *)ATIM1_BASE)
 #define USART1         ((USART_TypeDef *)USART1_BASE)
 #define USART2         ((USART_TypeDef *)USART2_BASE)
 #define USART3         ((USART_TypeDef *)USART3_BASE)
@@ -321,6 +352,49 @@ typedef struct {
 #define PMUC_HPSYS_VOUT_VOUT_Msk        (0xFUL << PMUC_HPSYS_VOUT_VOUT_Pos)
 #define PMUC_BUCK_VOUT_VOUT_Pos         (0U)
 #define PMUC_BUCK_VOUT_VOUT_Msk         (0xFUL << PMUC_BUCK_VOUT_VOUT_Pos)
+
+#define HPSYS_RCC_ENR1_PINMUX1_Pos      (2U)
+#define HPSYS_RCC_ENR1_PINMUX1_Msk      (0x1UL << HPSYS_RCC_ENR1_PINMUX1_Pos)
+#define HPSYS_RCC_ESR1_PINMUX1_Pos      (2U)
+#define HPSYS_RCC_ESR1_PINMUX1_Msk      (0x1UL << HPSYS_RCC_ESR1_PINMUX1_Pos)
+#define HPSYS_RCC_ENR2_ATIM1_Pos        (9U)
+#define HPSYS_RCC_ENR2_ATIM1_Msk        (0x1UL << HPSYS_RCC_ENR2_ATIM1_Pos)
+#define HPSYS_RCC_ESR2_ATIM1_Pos        (9U)
+#define HPSYS_RCC_ESR2_ATIM1_Msk        (0x1UL << HPSYS_RCC_ESR2_ATIM1_Pos)
+
+#define HPSYS_CFG_ATIM1_PINR1_CH1_PIN_Pos  (0U)
+#define HPSYS_CFG_ATIM1_PINR1_CH1_PIN_Msk  (0x3FUL << HPSYS_CFG_ATIM1_PINR1_CH1_PIN_Pos)
+#define HPSYS_CFG_ATIM1_PINR1_CH2_PIN_Pos  (8U)
+#define HPSYS_CFG_ATIM1_PINR1_CH2_PIN_Msk  (0x3FUL << HPSYS_CFG_ATIM1_PINR1_CH2_PIN_Pos)
+#define HPSYS_CFG_ATIM1_PINR1_CH3_PIN_Pos  (16U)
+#define HPSYS_CFG_ATIM1_PINR1_CH3_PIN_Msk  (0x3FUL << HPSYS_CFG_ATIM1_PINR1_CH3_PIN_Pos)
+#define HPSYS_CFG_ATIM1_PINR1_CH4_PIN_Pos  (24U)
+#define HPSYS_CFG_ATIM1_PINR1_CH4_PIN_Msk  (0x3FUL << HPSYS_CFG_ATIM1_PINR1_CH4_PIN_Pos)
+
+#define ATIM_CR1_CEN                    (0x1UL << 0)
+#define ATIM_CR1_ARPE                   (0x1UL << 7)
+#define ATIM_EGR_UG                     (0x1UL << 0)
+#define ATIM_CCMR1_CC1S_Msk             (0x3UL << 0)
+#define ATIM_CCMR1_CC2S_Msk             (0x3UL << 8)
+#define ATIM_CCMR1_OC1PE                (0x1UL << 19)
+#define ATIM_CCMR1_OC1M_Msk             (0xFUL << 20)
+#define ATIM_CCMR1_OC1M_Pos             (20U)
+#define ATIM_CCMR1_OC2PE                (0x1UL << 27)
+#define ATIM_CCMR1_OC2M_Msk             (0xFUL << 28)
+#define ATIM_CCMR1_OC2M_Pos             (28U)
+#define ATIM_CCMR2_CC3S_Msk             (0x3UL << 0)
+#define ATIM_CCMR2_CC4S_Msk             (0x3UL << 8)
+#define ATIM_CCMR2_OC3PE                (0x1UL << 19)
+#define ATIM_CCMR2_OC3M_Msk             (0xFUL << 20)
+#define ATIM_CCMR2_OC3M_Pos             (20U)
+#define ATIM_CCMR2_OC4PE                (0x1UL << 27)
+#define ATIM_CCMR2_OC4M_Msk             (0xFUL << 28)
+#define ATIM_CCMR2_OC4M_Pos             (28U)
+#define ATIM_CCER_CC1E                  (0x1UL << 0)
+#define ATIM_CCER_CC2E                  (0x1UL << 4)
+#define ATIM_CCER_CC3E                  (0x1UL << 8)
+#define ATIM_CCER_CC4E                  (0x1UL << 12)
+#define ATIM_BDTR_MOE                   (0x1UL << 15)
 
 #define SCB_VTOR            (*(volatile uint32_t *)0xE000ED08UL)
 #define SCB_DEMCR           (*(volatile uint32_t *)0xE000EDFCUL)

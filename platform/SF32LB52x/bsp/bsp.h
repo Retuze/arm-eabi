@@ -13,6 +13,7 @@
 /* HAL */
 #include "hal_afio.h"
 #include "hal_gpio.h"
+#include "hal_pwm.h"
 #include "hal_uart.h"
 
 /* LL */

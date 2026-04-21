@@ -120,82 +120,77 @@
 #define LCD_QSPI_READ_SGL  0x03U
 #define LCD_QSPI_WRITE_Q   0x12U
 
-/**
- * LCD-side QSPI transfer hooks (implementation owns GPIO / HW; default in lcd.c).
- */
+/** LCD-side QSPI transfer hooks (implementation owns GPIO / HW context). */
 typedef struct lcd_qspi {
-    void (*init)(void);
-    void (*cs_low)(void);
-    void (*cs_high)(void);
-    void (*send_byte)(uint8_t data);
-    void (*send)(const uint8_t *data, uint16_t len);
-    void (*send_4wire)(const uint8_t *data, uint16_t len);
-    void (*recv)(uint8_t *data, uint16_t len);
+    void (*init)(void *ctx);
+    void (*cs_low)(void *ctx);
+    void (*cs_high)(void *ctx);
+    void (*send_byte)(void *ctx, uint8_t data);
+    void (*send)(void *ctx, const uint8_t *data, uint16_t len);
+    void (*send_4wire)(void *ctx, const uint8_t *data, uint16_t len);
+    void (*recv)(void *ctx, uint8_t *data, uint16_t len);
 } lcd_qspi_t;
 
-/** Panel bus: QSPI link + board control lines (reset, TE, backlight). */
+/** Panel bus: transport ops + implementation-private context. */
 typedef struct {
     const lcd_qspi_t *qspi;
-    uint32_t          pin_reset;
-    uint32_t          pin_te;
+    void             *qspi_ctx;
+} lcd_bus_t;
+
+typedef struct lcd_device lcd_device_t;
+typedef struct lcd_ic_driver lcd_ic_driver_t;
+
+struct lcd_ic_driver {
+    const char *name;
+    int (*init)(lcd_device_t *dev);
+    void (*set_window)(lcd_device_t *dev, uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
+    void (*mem_write_begin)(lcd_device_t *dev, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+    void (*mem_write)(lcd_device_t *dev, const uint8_t *data, uint32_t len);
+    void (*mem_write_end)(lcd_device_t *dev);
+    void (*set_sleep)(lcd_device_t *dev, int sleeping);
+    /** NULL: brightness via BL PWM; non-NULL: DCS etc. (BL pin may be supply, see lcd_device.pin_bl). */
+    void (*set_brightness)(lcd_device_t *dev, uint8_t percent);
+    uint32_t (*read_id)(lcd_device_t *dev);
+};
+
+struct lcd_device {
+    const char *name;
+    lcd_bus_t *bus;
+    const lcd_ic_driver_t *ic;
+    uint16_t width;
+    uint16_t height;
+    uint32_t pin_reset;
+    uint32_t pin_te;
     /**
-     * Active high. Meaning depends on set_brightness (see lcd_init):
-     * NULL — TFT: BL / PWM enable; held low through init, then high (dim later via your PWM API).
+     * Active high. Meaning depends on driver->set_brightness:
+     * NULL — TFT: BL / PWM enable; held low through init, then high.
      * non-NULL — OLED: often PMIC / panel supply; asserted high before panel driver init.
      */
     uint32_t pin_bl;
-} lcd_bus_t;
-
-/** Board wiring + QSPI hooks; defined in lcd.c (default .qspi = &lcd_qspi). */
-extern lcd_bus_t lcd_bus;
-
-void lcd_bus_init(const lcd_bus_t *bus);
-void lcd_bus_reset(const lcd_bus_t *bus);
-
-/** QSPI 0x03: command on D0 (single), parameters read on D0 (single). */
-void lcd_read_cmd(const lcd_bus_t *bus, uint8_t cmd, uint8_t *data, uint16_t len);
-
-/** QSPI 0x02: command + parameters on D0 (single-line). */
-void lcd_write_cmd(const lcd_bus_t *bus, uint8_t cmd, const uint8_t *data, uint16_t len);
-
-/** QSPI 0x12: command byte on D0 (single), parameters on D0–D3 (quad). */
-void lcd_write_cmd4(const lcd_bus_t *bus, uint8_t cmd, const uint8_t *data, uint16_t len);
-
-/**
- * Raw pixel bytes after lcd_mem_write_begin and before lcd_mem_write_end
- * (IC-specific framing / bus selection is inside the panel driver). Weak default in lcd.c; strong in driver.
- */
-__attribute__((weak)) void lcd_mem_write(const uint8_t *data, uint32_t len);
-
-typedef struct lcd_panel lcd_panel_t;
-
-struct lcd_panel {
-    uint16_t width;
-    uint16_t height;
-    void (*init)(void);
-    void (*set_window)(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
-    void (*mem_write_begin)(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
-    void (*mem_write_end)(void);
-    void (*set_sleep)(int sleeping);
-    /** NULL: brightness via BL PWM; non-NULL: DCS etc. (BL pin may be supply, see lcd_bus.pin_bl). */
-    void (*set_brightness)(uint8_t percent);
-    uint32_t (*read_id)(void);
+    void *driver_data;
 };
 
-/** Panel ops + size; bus is global `lcd_bus` in lcd.c. Link one panel driver from common/lcd/panel/. */
-extern lcd_panel_t lcd_panel;
-/** Default bit-bang QSPI bound to board LCD_* pins; defined in lcd.c. */
-extern const lcd_qspi_t lcd_qspi;
+void lcd_bus_init(lcd_device_t *dev);
+void lcd_bus_reset(lcd_device_t *dev);
 
-/** Uses global lcd_panel. */
-void lcd_init(void);
-void lcd_set_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
-void lcd_mem_write_begin(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
-void lcd_mem_write_end(void);
-void lcd_set_sleep(int sleeping);
-void lcd_set_brightness(uint8_t percent);
-uint32_t lcd_read_id(void);
+/** QSPI 0x03: command on D0 (single), parameters read on D0 (single). */
+void lcd_read_cmd(lcd_device_t *dev, uint8_t cmd, uint8_t *data, uint16_t len);
+
+/** QSPI 0x02: command + parameters on D0 (single-line). */
+void lcd_write_cmd(lcd_device_t *dev, uint8_t cmd, const uint8_t *data, uint16_t len);
+
+/** QSPI 0x12: command byte on D0 (single), parameters on D0–D3 (quad). */
+void lcd_write_cmd4(lcd_device_t *dev, uint8_t cmd, const uint8_t *data, uint16_t len);
+
+void lcd_init(lcd_device_t *dev);
+void lcd_set_window(lcd_device_t *dev, uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
+void lcd_mem_write_begin(lcd_device_t *dev, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+void lcd_mem_write(lcd_device_t *dev, const uint8_t *data, uint32_t len);
+void lcd_mem_write_end(lcd_device_t *dev);
+void lcd_set_sleep(lcd_device_t *dev, int sleeping);
+void lcd_set_brightness(lcd_device_t *dev, uint8_t percent);
+uint32_t lcd_read_id(lcd_device_t *dev);
 /** @param pixels_argb ARGB8888 (0xAARRGGBB per uint32); bus sends 4 bytes/pixel (DCS_SET_PIXEL_FORMAT / colmod must match). */
-void lcd_draw_pixels(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint32_t *pixels_argb);
+void lcd_draw_pixels(lcd_device_t *dev, uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint32_t *pixels_argb);
 
 #endif

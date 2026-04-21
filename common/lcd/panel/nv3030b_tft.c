@@ -1,23 +1,20 @@
 #include "lcd.h"
 #include "bsp.h"
 
-/* board.h: LCD_WIDTH, LCD_HEIGHT (panel logical size). */
-#ifndef LCD_WIDTH
-#define LCD_WIDTH 466u
-#endif
-#ifndef LCD_HEIGHT
-#define LCD_HEIGHT 466u
-#endif
-
-/** Bound panel bus instance for this driver (global `lcd_bus` in lcd.c). */
-static lcd_bus_t *nv3030b_bus(void)
+static const lcd_qspi_t *nv3030b_qspi(lcd_device_t *dev)
 {
-    return &lcd_bus;
+    return dev->bus->qspi;
 }
 
-void lcd_mem_write(const uint8_t *data, uint32_t len)
+static void *nv3030b_qspi_ctx(lcd_device_t *dev)
 {
-    const lcd_qspi_t *q = nv3030b_bus()->qspi;
+    return dev->bus->qspi_ctx;
+}
+
+static void nv3030b_mem_write(lcd_device_t *dev, const uint8_t *data, uint32_t len)
+{
+    const lcd_qspi_t *q = nv3030b_qspi(dev);
+    void *ctx = nv3030b_qspi_ctx(dev);
 
     if (data == NULL || len == 0U || (len % 4U) != 0U) {
         return;
@@ -42,21 +39,21 @@ void lcd_mem_write(const uint8_t *data, uint32_t len)
             rgb565[i]  = (uint16_t)(((uint16_t)(r & 0xF8U) << 8) | ((uint16_t)(g & 0xFCU) << 3) |
                                     ((uint16_t)(b >> 3U)));
         }
-        q->send_4wire((const uint8_t *)rgb565, (uint16_t)(chunk * 2U));
+        q->send_4wire(ctx, (const uint8_t *)rgb565, (uint16_t)(chunk * 2U));
         p += chunk * 4U;
         rem_px -= chunk;
     }
 }
 
 /** Single-line DCS write (0x02 framing); all panel commands go through here. */
-static void nv3030b_dcs_write(uint8_t cmd, const uint8_t *data, uint16_t len)
+static void nv3030b_dcs_write(lcd_device_t *dev, uint8_t cmd, const uint8_t *data, uint16_t len)
 {
-    lcd_write_cmd(nv3030b_bus(), cmd, data, len);
+    lcd_write_cmd(dev, cmd, data, len);
 }
 
-static void nv3030b_dcs_read(uint8_t cmd, uint8_t *data, uint16_t len)
+static void nv3030b_dcs_read(lcd_device_t *dev, uint8_t cmd, uint8_t *data, uint16_t len)
 {
-    lcd_read_cmd(nv3030b_bus(), cmd, data, len);
+    lcd_read_cmd(dev, cmd, data, len);
 }
 
 /**
@@ -76,7 +73,7 @@ static const uint8_t nv3030b_initcmd[] = {
     (uint8_t)DCS_SET_ADDRESS_MODE, 1, 0x08, (uint8_t)DCS_ENTER_INVERT_MODE, 0, (uint8_t)DCS_EXIT_SLEEP_MODE, 0x80,
     (uint8_t)DCS_SET_DISPLAY_ON, 0x80, 0x00};
 
-static void nv3030b_run_initcmd_table(void)
+static void nv3030b_run_initcmd_table(lcd_device_t *dev)
 {
     const uint8_t *addr = nv3030b_initcmd;
     for (;;) {
@@ -86,7 +83,7 @@ static void nv3030b_run_initcmd_table(void)
         }
         uint8_t x        = *addr++;
         uint8_t num_args = x & 0x7FU;
-        nv3030b_dcs_write(cmd, addr, num_args);
+        nv3030b_dcs_write(dev, cmd, addr, num_args);
         addr += num_args;
         if ((x & 0x80U) != 0U) {
             delay(150U);
@@ -94,26 +91,28 @@ static void nv3030b_run_initcmd_table(void)
     }
 }
 
-void nv3030b_init(void)
+static int nv3030b_init(lcd_device_t *dev)
 {
-    nv3030b_run_initcmd_table();
+    nv3030b_run_initcmd_table(dev);
+    return 0;
 }
 
-static void nv3030b_qspi_stream_start(void)
+static void nv3030b_qspi_stream_start(lcd_device_t *dev)
 {
-    const lcd_qspi_t *q = nv3030b_bus()->qspi;
+    const lcd_qspi_t *q = nv3030b_qspi(dev);
+    void *ctx = nv3030b_qspi_ctx(dev);
 
-    q->cs_low();
-    q->send_byte(LCD_QSPI_WRITE_Q);
-    q->send_byte(DCS_WRITE_MEMORY_START);
+    q->cs_low(ctx);
+    q->send_byte(ctx, LCD_QSPI_WRITE_Q);
+    q->send_byte(ctx, DCS_WRITE_MEMORY_START);
 }
 
-static void nv3030b_qspi_stream_end(void)
+static void nv3030b_qspi_stream_end(lcd_device_t *dev)
 {
-    nv3030b_bus()->qspi->cs_high();
+    nv3030b_qspi(dev)->cs_high(nv3030b_qspi_ctx(dev));
 }
 
-void nv3030b_set_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
+static void nv3030b_set_window(lcd_device_t *dev, uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
 {
     uint8_t col[4] = {
         (uint8_t)(x0 >> 8),
@@ -128,56 +127,56 @@ void nv3030b_set_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
         (uint8_t)(y1 & 0xFFU),
     };
 
-    nv3030b_dcs_write(DCS_SET_COLUMN_ADDRESS, col, sizeof col);
-    nv3030b_dcs_write(DCS_SET_PAGE_ADDRESS, row, sizeof row);
+    nv3030b_dcs_write(dev, DCS_SET_COLUMN_ADDRESS, col, sizeof col);
+    nv3030b_dcs_write(dev, DCS_SET_PAGE_ADDRESS, row, sizeof row);
 }
 
-void nv3030b_mem_write_begin(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
+static void nv3030b_mem_write_begin(lcd_device_t *dev, uint16_t x, uint16_t y, uint16_t w, uint16_t h)
 {
     if (w == 0U || h == 0U) {
         return;
     }
-    nv3030b_set_window(x, y, (uint16_t)(x + w - 1U), (uint16_t)(y + h - 1U));
-    nv3030b_qspi_stream_start();
+    nv3030b_set_window(dev, x, y, (uint16_t)(x + w - 1U), (uint16_t)(y + h - 1U));
+    nv3030b_qspi_stream_start(dev);
 }
 
-void nv3030b_mem_write_end(void)
+static void nv3030b_mem_write_end(lcd_device_t *dev)
 {
-    nv3030b_qspi_stream_end();
+    nv3030b_qspi_stream_end(dev);
 }
 
-void nv3030b_set_sleep(int sleeping)
+static void nv3030b_set_sleep(lcd_device_t *dev, int sleeping)
 {
     if (sleeping != 0) {
-        nv3030b_dcs_write(DCS_ENTER_SLEEP_MODE, NULL, 0U);
+        nv3030b_dcs_write(dev, DCS_ENTER_SLEEP_MODE, NULL, 0U);
     } else {
-        nv3030b_dcs_write(DCS_EXIT_SLEEP_MODE, NULL, 0U);
+        nv3030b_dcs_write(dev, DCS_EXIT_SLEEP_MODE, NULL, 0U);
         delay(120U);
     }
 }
 
-void nv3030b_set_brightness(uint8_t percent)
+static void nv3030b_set_brightness(lcd_device_t *dev, uint8_t percent)
 {
     if (percent > 100U) {
         percent = 100U;
     }
     uint8_t level = (uint8_t)(((uint32_t)percent * 255U) / 100U);
-    nv3030b_dcs_write(DCS_SET_DISPLAY_BRIGHTNESS, &level, 1U);
+    nv3030b_dcs_write(dev, DCS_SET_DISPLAY_BRIGHTNESS, &level, 1U);
 }
 
-uint32_t nv3030b_read_id(void)
+static uint32_t nv3030b_read_id(lcd_device_t *dev)
 {
     uint8_t id[3] = {0U, 0U, 0U};
-    nv3030b_dcs_read(DCS_GET_DISPLAY_ID, id, 3U);
+    nv3030b_dcs_read(dev, DCS_GET_DISPLAY_ID, id, 3U);
     return ((uint32_t)id[0] << 16) | ((uint32_t)id[1] << 8) | (uint32_t)id[2];
 }
 
-lcd_panel_t lcd_panel = {
-    .width           = (uint16_t)LCD_WIDTH,
-    .height          = (uint16_t)LCD_HEIGHT,
+const lcd_ic_driver_t nv3030b_ic_driver = {
+    .name            = "nv3030b",
     .init            = nv3030b_init,
     .set_window      = nv3030b_set_window,
     .mem_write_begin = nv3030b_mem_write_begin,
+    .mem_write       = nv3030b_mem_write,
     .mem_write_end   = nv3030b_mem_write_end,
     .set_sleep       = nv3030b_set_sleep,
     .set_brightness  = nv3030b_set_brightness,

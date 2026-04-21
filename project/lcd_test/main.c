@@ -16,8 +16,8 @@ int main(void)
         strip[i] = 0xFF000000u | ((uint32_t)g << 8);
     }
 
-    lcd_init();
-    lcd_draw_pixels(8U, 8U, STRIP_W, 1U, strip);
+    lcd_init(&lcd0);
+    lcd_draw_pixels(&lcd0, 8U, 8U, STRIP_W, 1U, strip);
 
     while (1) {
         digitalToggle(LED_RED);
