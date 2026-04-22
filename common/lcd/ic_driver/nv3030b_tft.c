@@ -45,7 +45,7 @@ static void nv3030b_mem_write(lcd_device_t *dev, const uint8_t *data, uint32_t l
     }
 }
 
-/** Single-line DCS write (0x02 framing); all panel commands go through here. */
+/** Single-line DCS write (0x02 framing); all ic commands go through here. */
 static void nv3030b_dcs_write(lcd_device_t *dev, uint8_t cmd, const uint8_t *data, uint16_t len)
 {
     lcd_write_cmd(dev, cmd, data, len);

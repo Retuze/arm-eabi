@@ -31,6 +31,20 @@ SECTIONS
         *(.rodata*)
         KEEP(*(.init))
         KEEP(*(.fini))
+
+        . = ALIGN(4);
+        PROVIDE_HIDDEN(__preinit_array_start = .);
+        KEEP(*(.preinit_array))
+        PROVIDE_HIDDEN(__preinit_array_end = .);
+        PROVIDE_HIDDEN(__init_array_start = .);
+        KEEP(*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
+        KEEP(*(.init_array .ctors))
+        PROVIDE_HIDDEN(__init_array_end = .);
+        PROVIDE_HIDDEN(__fini_array_start = .);
+        KEEP(*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
+        KEEP(*(.fini_array .dtors))
+        PROVIDE_HIDDEN(__fini_array_end = .);
+
         . = ALIGN(4);
     } > ROM
 
@@ -45,11 +59,46 @@ SECTIONS
 		_sdata = .;
 		*(.data)
 		*(.data.*)
+
+		. = ALIGN(4);
+		PROVIDE(__global_pointer$ = . + 0x800);
+		*(.sdata .sdata.*)
+
 		. = ALIGN(4);
 		_edata = .;
-		__data_end__ = .;
 	} > RAM AT>ROM
 	__data_load__ = LOADADDR(.data);
+
+	/* ----- Picolibc TLS (Thread Local Storage) -------------------------
+	 * .tdata holds initialised TLS variables (like errno),
+	 * .tbss  holds zero-initialised TLS variables.
+	 * The first copy lives right after .data in RAM and serves as the
+	 * initial TLS block; additional per-thread blocks are created at
+	 * runtime by copying from __tdata_source.
+	 * ------------------------------------------------------------------- */
+	.tdata : ALIGN(4)
+	{
+		__tdata_start = .;
+		*(.tdata .tdata.* .gnu.linkonce.td.*)
+		__tdata_end = .;
+		__data_end__ = .;
+	} > RAM AT>ROM
+
+	.tbss (NOLOAD) : ALIGN(4)
+	{
+		__tbss_start = .;
+		*(.tbss .tbss.* .gnu.linkonce.tb.*)
+		*(.tcommon)
+		__tbss_end = .;
+	} > RAM
+
+	PROVIDE(__tdata_source = LOADADDR(.tdata));
+	PROVIDE(__tdata_size   = __tdata_end - __tdata_start);
+	PROVIDE(__tbss_size    = __tbss_end  - __tbss_start);
+	PROVIDE(__tls_base     = __tdata_start);
+	PROVIDE(__tls_size     = __tbss_end  - __tdata_start);
+	PROVIDE(__tls_align    = MAX(ALIGNOF(.tdata), ALIGNOF(.tbss)));
+	PROVIDE(__arm32_tls_tcb_offset = MAX(8, __tls_align));
 
 	.ramfunc :
 	{
@@ -89,7 +138,7 @@ SECTIONS
 		__copy_table_start__ = .;
 		LONG(LOADADDR(.data))
 		LONG(ADDR(.data))
-		LONG(SIZEOF(.data))
+		LONG(SIZEOF(.data) + SIZEOF(.tdata))
 		__copy_table_end__ = .;
 	} > ROM
 
@@ -97,6 +146,8 @@ SECTIONS
 	{
 		. = ALIGN(4);
 		__zero_table_start__ = .;
+		LONG(__tbss_start)
+		LONG(__tbss_end - __tbss_start)
 		LONG(_sbss)
 		LONG(_ebss - _sbss)
 		__zero_table_end__ = .;

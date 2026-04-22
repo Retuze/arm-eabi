@@ -83,6 +83,46 @@ target_link_libraries(picolibc_rt INTERFACE
 )
 
 # ---------------------------------------------------------------------------
+# RT-Thread kernel — INTERFACE library (sources compiled per-project so each
+# firmware target can provide its own rtconfig.h)
+# ---------------------------------------------------------------------------
+set(RTTHREAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/rt-thread)
+
+set(RTTHREAD_SOURCES
+    ${RTTHREAD_DIR}/src/clock.c
+    ${RTTHREAD_DIR}/src/components.c
+    ${RTTHREAD_DIR}/src/cpu_up.c
+    ${RTTHREAD_DIR}/src/defunct.c
+    ${RTTHREAD_DIR}/src/idle.c
+    ${RTTHREAD_DIR}/src/ipc.c
+    ${RTTHREAD_DIR}/src/irq.c
+    ${RTTHREAD_DIR}/src/kservice.c
+    ${RTTHREAD_DIR}/src/mem.c
+    ${RTTHREAD_DIR}/src/mempool.c
+    ${RTTHREAD_DIR}/src/object.c
+    ${RTTHREAD_DIR}/src/scheduler_comm.c
+    ${RTTHREAD_DIR}/src/scheduler_up.c
+    ${RTTHREAD_DIR}/src/thread.c
+    ${RTTHREAD_DIR}/src/timer.c
+    ${RTTHREAD_DIR}/src/klibc/kstdio.c
+    ${RTTHREAD_DIR}/src/klibc/kstring.c
+    ${RTTHREAD_DIR}/src/klibc/kerrno.c
+    ${RTTHREAD_DIR}/src/klibc/rt_vsnprintf_tiny.c
+    ${RTTHREAD_DIR}/libcpu/arm/cortex-m33/cpuport.c
+    ${RTTHREAD_DIR}/libcpu/arm/cortex-m33/context_gcc.S
+    ${RTTHREAD_DIR}/libcpu/arm/cortex-m33/trustzone.c
+)
+
+add_library(rtthread_headers INTERFACE)
+target_include_directories(rtthread_headers INTERFACE
+    ${RTTHREAD_DIR}/include
+    ${RTTHREAD_DIR}/include/klibc
+    ${RTTHREAD_DIR}/libcpu/arm/cortex-m33
+)
+target_compile_definitions(rtthread_headers INTERFACE __RTTHREAD__ __RT_KERNEL_SOURCE__)
+target_link_libraries(rtthread_headers INTERFACE platform picolibc_rt)
+
+# ---------------------------------------------------------------------------
 # common — platform-agnostic utilities (bit-bang drivers, log, etc.)
 # ---------------------------------------------------------------------------
 add_library(common STATIC
@@ -92,8 +132,8 @@ add_library(common STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/common/bit-bang/uart/bb_uart.c
     ${CMAKE_CURRENT_SOURCE_DIR}/common/lcd/lcd.c
     ${CMAKE_CURRENT_SOURCE_DIR}/common/lcd/bus/lcd_qspi_bitbang.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/common/lcd/panel/co5300_oled.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/common/lcd/panel/nv3030b_tft.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/lcd/ic_driver/co5300_oled.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/lcd/ic_driver/nv3030b_tft.c
 )
 target_include_directories(common
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/common
@@ -114,4 +154,6 @@ endif()
 # Firmware projects
 # ---------------------------------------------------------------------------
 add_subdirectory(project/blink)
-add_subdirectory(project/lcd_test)
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/project/lcd_test/CMakeLists.txt)
+    add_subdirectory(project/lcd_test)
+endif()

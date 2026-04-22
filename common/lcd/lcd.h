@@ -9,7 +9,7 @@
 #define LCD_PIN_NONE (0xFFFFFFFFu)
 
 /**
- * MIPI DCS command codes (shared by panel drivers over lcd_write_cmd / lcd_read_cmd).
+ * MIPI DCS command codes (shared by ic drivers over lcd_write_cmd / lcd_read_cmd).
  * Opcodes align with Linux `include/video/mipi_display.h` (MIPI DCS / DSI).
  */
 #define DCS_NOP                          0x00U
@@ -76,7 +76,7 @@
 /**
  * DCS_SET_PIXEL_FORMAT (0x3A): Linux names packed fields `MIPI_DCS_PIXEL_FMT_*` in
  * `include/video/mipi_display.h` (e.g. `MIPI_DCS_PIXEL_FMT_16BIT` = 5, `MIPI_DCS_PIXEL_FMT_24BIT` = 7).
- * Many SPI/QSPI panel datasheets instead use the byte values below as the first 0x3A parameter
+ * Many SPI/QSPI ic datasheets instead use the byte values below as the first 0x3A parameter
  * (0x55 is also DCS opcode `DCS_WRITE_POWER_SAVE` — different role as cmd vs colmod payload).
  */
 #define DCS_COLMOD_RGB565   0x55U
@@ -88,7 +88,7 @@
 #define DCS_TEAR_OUTPUT_OFF 0x00U
 #define DCS_TEAR_OUTPUT_ON  0x01U
 
-/** DCS 0x26 (Set Gamma Curve) parameter: curve index 1–4 (panel-dependent). */
+/** DCS 0x26 (Set Gamma Curve) parameter: curve index 1–4 (ic-dependent). */
 #define DCS_GAMMA_CURVE_1 0x01U
 #define DCS_GAMMA_CURVE_2 0x02U
 #define DCS_GAMMA_CURVE_3 0x03U
@@ -102,7 +102,7 @@
 #define DCS_MADCTL_RGB 0x08U
 #define DCS_MADCTL_MH  0x04U
 
-/** DCS 0x53 (Write Control Display) common bits (MIPI DCS; panel may ignore). */
+/** DCS 0x53 (Write Control Display) common bits (MIPI DCS; ic may ignore). */
 #define DCS_CTRL_DISP_BL_CTRL_EN   0x20U
 #define DCS_CTRL_DISP_DD_EN        0x04U
 #define DCS_CTRL_DISP_DD_BRIGHT_EN 0x08U
@@ -131,7 +131,7 @@ typedef struct lcd_qspi {
     void (*recv)(void *ctx, uint8_t *data, uint16_t len);
 } lcd_qspi_t;
 
-/** Panel bus: transport ops + implementation-private context. */
+/** ic bus: transport ops + implementation-private context. */
 typedef struct {
     const lcd_qspi_t *qspi;
     void             *qspi_ctx;
@@ -164,7 +164,7 @@ struct lcd_device {
     /**
      * Active high. Meaning depends on driver->set_brightness:
      * NULL — TFT: BL / PWM enable; held low through init, then high.
-     * non-NULL — OLED: often PMIC / panel supply; asserted high before panel driver init.
+     * non-NULL — OLED: often PMIC / ic supply; asserted high before ic driver init.
      */
     uint32_t pin_bl;
     void *driver_data;

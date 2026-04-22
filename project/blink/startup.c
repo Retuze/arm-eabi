@@ -1,3 +1,7 @@
+#include <stddef.h>
+#include <stdint.h>
+
+#include <picotls.h>
 #include "bsp.h"
 
 extern size_t __StackTop;
@@ -10,8 +14,11 @@ extern size_t __ramfunc_start__ __attribute__((weak));
 extern size_t __ramfunc_end__ __attribute__((weak));
 extern size_t __bss_start__;
 extern size_t __bss_end__;
+extern size_t __tbss_start;
+extern size_t __tbss_end;
+extern char   __tls_base[];
 
-extern int main(void);
+extern int entry(void);
 
 static void Default_Handler(void)
 {
@@ -43,29 +50,34 @@ void Reset_Handler(void)
         *dst++ = 0;
     }
 
+    dst = (size_t *)&__tbss_start;
+    while (dst < (size_t *)&__tbss_end) {
+        *dst++ = 0;
+    }
+
+    _init_tls(__tls_base);
+    _set_tls(__tls_base);
+
     SystemInit();
-    main();
+    entry();
 
     while (1) {
     }
 }
 
 void NMI_Handler(void) __attribute__((weak, alias("Default_Handler")));
-void HardFault_Handler(void) __attribute__((weak, alias("Default_Handler")));
 void MemManage_Handler(void) __attribute__((weak, alias("Default_Handler")));
 void BusFault_Handler(void) __attribute__((weak, alias("Default_Handler")));
 void UsageFault_Handler(void) __attribute__((weak, alias("Default_Handler")));
 void SVC_Handler(void) __attribute__((weak, alias("Default_Handler")));
 void DebugMon_Handler(void) __attribute__((weak, alias("Default_Handler")));
-void PendSV_Handler(void) __attribute__((weak, alias("Default_Handler")));
-void SysTick_Handler(void) __attribute__((weak, alias("Default_Handler")));
 
 __attribute__((section(".isr_vector"), used))
 const uintptr_t g_pfnVectors[] = {
     (uintptr_t)&__StackTop,
     (uintptr_t)Reset_Handler,
     (uintptr_t)NMI_Handler,
-    (uintptr_t)HardFault_Handler,
+    (uintptr_t)0,                  /* HardFault — provided by RT-Thread context_gcc.S */
     (uintptr_t)MemManage_Handler,
     (uintptr_t)BusFault_Handler,
     (uintptr_t)UsageFault_Handler,
@@ -76,6 +88,6 @@ const uintptr_t g_pfnVectors[] = {
     (uintptr_t)SVC_Handler,
     (uintptr_t)DebugMon_Handler,
     0U,
-    (uintptr_t)PendSV_Handler,
-    (uintptr_t)SysTick_Handler,
+    0U,                            /* PendSV — provided by RT-Thread context_gcc.S */
+    0U,                            /* SysTick — provided by system.c for RT-Thread tick */
 };

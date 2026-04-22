@@ -1,6 +1,0 @@
-[submodule "third_party/wasm3/upstream"]
-	path = third_party/wasm3/upstream
-	url = https://github.com/wasm3/wasm3.git
-[submodule "third_party/rt-thread"]
-	path = third_party/rt-thread
-	url = https://github.com/RT-Thread/rt-thread.git
