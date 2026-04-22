@@ -99,6 +99,8 @@ SECTIONS
 	PROVIDE(__tls_size     = __tbss_end  - __tdata_start);
 	PROVIDE(__tls_align    = MAX(ALIGNOF(.tdata), ALIGNOF(.tbss)));
 	PROVIDE(__arm32_tls_tcb_offset = MAX(8, __tls_align));
+	PROVIDE(__tls_start    = SIZEOF(.tdata) ? ADDR(.tdata) : ADDR(.tbss));
+	PROVIDE(__tbss_offset  = ADDR(.tbss) - __tls_start);
 
 	.ramfunc :
 	{

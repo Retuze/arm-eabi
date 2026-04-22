@@ -18,7 +18,7 @@ extern size_t __tbss_start;
 extern size_t __tbss_end;
 extern char   __tls_base[];
 
-extern int entry(void);
+extern int main(void);
 
 static void Default_Handler(void)
 {
@@ -31,7 +31,7 @@ void Reset_Handler(void)
     size_t *src = &__data_load__;
     size_t *dst = &__data_start__;
 
-    __asm volatile("msr msplim, %0" : : "r"(__StackLimit) : "memory");
+    __asm volatile("msr msplim, %0" : : "r"(&__StackLimit) : "memory");
 
     while (dst < &__data_end__) {
         *dst++ = *src++;
@@ -59,25 +59,28 @@ void Reset_Handler(void)
     _set_tls(__tls_base);
 
     SystemInit();
-    entry();
+    main();
 
     while (1) {
     }
 }
 
-void NMI_Handler(void) __attribute__((weak, alias("Default_Handler")));
-void MemManage_Handler(void) __attribute__((weak, alias("Default_Handler")));
-void BusFault_Handler(void) __attribute__((weak, alias("Default_Handler")));
+void NMI_Handler(void)        __attribute__((weak, alias("Default_Handler")));
+void HardFault_Handler(void)  __attribute__((weak, alias("Default_Handler")));
+void MemManage_Handler(void)  __attribute__((weak, alias("Default_Handler")));
+void BusFault_Handler(void)   __attribute__((weak, alias("Default_Handler")));
 void UsageFault_Handler(void) __attribute__((weak, alias("Default_Handler")));
-void SVC_Handler(void) __attribute__((weak, alias("Default_Handler")));
-void DebugMon_Handler(void) __attribute__((weak, alias("Default_Handler")));
+void SVC_Handler(void)        __attribute__((weak, alias("Default_Handler")));
+void DebugMon_Handler(void)   __attribute__((weak, alias("Default_Handler")));
+void PendSV_Handler(void)     __attribute__((weak, alias("Default_Handler")));
+extern void SysTick_Handler(void);
 
 __attribute__((section(".isr_vector"), used))
 const uintptr_t g_pfnVectors[] = {
     (uintptr_t)&__StackTop,
     (uintptr_t)Reset_Handler,
     (uintptr_t)NMI_Handler,
-    (uintptr_t)0,                  /* HardFault — provided by RT-Thread context_gcc.S */
+    (uintptr_t)HardFault_Handler,
     (uintptr_t)MemManage_Handler,
     (uintptr_t)BusFault_Handler,
     (uintptr_t)UsageFault_Handler,
@@ -88,6 +91,6 @@ const uintptr_t g_pfnVectors[] = {
     (uintptr_t)SVC_Handler,
     (uintptr_t)DebugMon_Handler,
     0U,
-    0U,                            /* PendSV — provided by RT-Thread context_gcc.S */
-    0U,                            /* SysTick — provided by system.c for RT-Thread tick */
+    (uintptr_t)PendSV_Handler,
+    (uintptr_t)SysTick_Handler,
 };
